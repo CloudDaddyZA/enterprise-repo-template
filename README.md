@@ -6,6 +6,22 @@ A **golden repository template** for creating fully governed, enterprise-grade r
 
 ---
 
+## Enterprise Governance Architecture
+
+This template implements **Layer 3** of a 5-layer enterprise governance model:
+
+![Enterprise Governance Architecture](docs/images/enterprise-governance-architecture.png)
+
+| Layer | Component | Purpose |
+|-------|-----------|---------|
+| 1 | **GitHub Organization** | Foundation for identity, security, and governance across all repositories |
+| 2 | **Org Rulesets** | Immutable governance enforcement (branch protection, status checks, security rules) |
+| 3 | **Golden Template Repository** | ← *This repo* — the blueprint with standards, automation, and defaults |
+| 4 | **Bootstrap Automation** | Repo factory that provisions teams, environments, secrets, and integrations |
+| 5 | **Governed Project Repositories** | The end state — secure, consistent, production-ready repositories |
+
+---
+
 ## What's Included
 
 | Category | Contents |
