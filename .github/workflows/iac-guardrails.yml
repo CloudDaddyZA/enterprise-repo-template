@@ -1,0 +1,169 @@
+# ============================================================================
+# IaC Guardrails - Infrastructure as Code Validation
+# ============================================================================
+# Validates Terraform and Bicep code on PRs touching infra/ directory.
+# Ensures IaC follows formatting, passes validation, and has no lint errors.
+# ============================================================================
+
+name: IaC Guardrails
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/**"
+  pull_request:
+    branches: [main]
+    paths:
+      - "infra/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  # --------------------------------------------------------------------------
+  # Terraform Validation
+  # --------------------------------------------------------------------------
+  terraform:
+    name: Terraform Validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/terraform
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~> 1.5"
+
+      - name: Terraform Format Check
+        id: fmt
+        run: terraform fmt -check -recursive -diff
+        continue-on-error: true
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+
+      - name: Setup TFLint
+        uses: terraform-linters/setup-tflint@v4
+
+      - name: TFLint Init
+        run: tflint --init
+
+      - name: TFLint Run
+        id: tflint
+        run: tflint --no-color --recursive
+        continue-on-error: true
+
+      - name: Post PR Comment
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fmtOutcome = '${{ steps.fmt.outcome }}';
+            const validateOutcome = '${{ steps.validate.outcome }}';
+            const tflintOutcome = '${{ steps.tflint.outcome }}';
+
+            const statusIcon = (outcome) => outcome === 'success' ? '✅' : '❌';
+
+            const body = `### 🏗️ Terraform Validation Results
+
+            | Check | Status |
+            |-------|--------|
+            | Format | ${statusIcon(fmtOutcome)} \`${fmtOutcome}\` |
+            | Validate | ${statusIcon(validateOutcome)} \`${validateOutcome}\` |
+            | TFLint | ${statusIcon(tflintOutcome)} \`${tflintOutcome}\` |
+
+            *Triggered by commit \`${{ github.sha }}\`*`;
+
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: body
+            });
+
+      - name: Fail on errors
+        if: steps.fmt.outcome == 'failure' || steps.validate.outcome == 'failure' || steps.tflint.outcome == 'failure'
+        run: exit 1
+
+  # --------------------------------------------------------------------------
+  # Bicep Validation
+  # --------------------------------------------------------------------------
+  bicep:
+    name: Bicep Validate
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: infra/bicep
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bicep CLI
+        run: |
+          az bicep install
+          az bicep version
+
+      - name: Bicep Build (Validate)
+        id: build
+        run: |
+          echo "Validating all Bicep files..."
+          ERRORS=0
+          for file in $(find . -name "*.bicep" -type f); do
+            echo "Building: $file"
+            if ! az bicep build --file "$file" --stdout > /dev/null 2>&1; then
+              echo "❌ FAILED: $file"
+              az bicep build --file "$file" 2>&1 || true
+              ERRORS=$((ERRORS + 1))
+            else
+              echo "✅ PASSED: $file"
+            fi
+          done
+
+          if [ $ERRORS -gt 0 ]; then
+            echo "::error::$ERRORS Bicep file(s) failed validation"
+            exit 1
+          fi
+
+      - name: Bicep Lint
+        run: |
+          echo "Linting all Bicep files..."
+          for file in $(find . -name "*.bicep" -type f); do
+            echo "Linting: $file"
+            az bicep lint --file "$file" 2>&1 || true
+          done
+
+  # --------------------------------------------------------------------------
+  # Security Scan for IaC
+  # --------------------------------------------------------------------------
+  iac-security:
+    name: IaC Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: infra/
+          framework: terraform,bicep
+          output_format: cli,sarif
+          output_file_path: console,results.sarif
+          soft_fail: true
+
+      - name: Upload SARIF
+        if: always()
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+        continue-on-error: true

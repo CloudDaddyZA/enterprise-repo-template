@@ -1,0 +1,160 @@
+# ============================================================================
+# Azure OIDC Bootstrap
+# ============================================================================
+# Sets up Azure federated credentials for GitHub Actions OIDC authentication.
+# This eliminates the need for storing Azure secrets in GitHub.
+#
+# Prerequisites:
+#   - Azure CLI authenticated (az login)
+#   - Permissions to create App Registrations and assign RBAC roles
+#
+# Run this workflow once after creating a repo from the template.
+# It will create the Azure AD App, federated credentials, and store
+# the necessary values as repository variables.
+# ============================================================================
+
+name: Azure OIDC Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      azure_subscription_id:
+        description: "Azure Subscription ID"
+        required: true
+        type: string
+      resource_group:
+        description: "Target Resource Group (leave empty to grant subscription scope)"
+        required: false
+        type: string
+      app_name:
+        description: "Azure AD App Registration name"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  setup-oidc:
+    name: Configure Azure OIDC
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Azure CLI Login (requires existing auth or self-hosted runner)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.BOOTSTRAP_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ inputs.azure_subscription_id }}
+
+      - name: Create Azure AD App and Federated Credentials
+        id: setup
+        env:
+          REPO: ${{ github.repository }}
+          SUBSCRIPTION_ID: ${{ inputs.azure_subscription_id }}
+          RESOURCE_GROUP: ${{ inputs.resource_group }}
+          APP_NAME: ${{ inputs.app_name }}
+        run: |
+          # Determine app name
+          if [ -z "$APP_NAME" ]; then
+            REPO_NAME=$(echo "$REPO" | cut -d'/' -f2)
+            APP_NAME="github-actions-${REPO_NAME}"
+          fi
+
+          echo "Creating Azure AD App Registration: $APP_NAME"
+
+          # Create App Registration
+          APP_ID=$(az ad app create --display-name "$APP_NAME" --query appId -o tsv)
+          echo "App ID: $APP_ID"
+
+          # Create Service Principal
+          SP_OBJECT_ID=$(az ad sp create --id "$APP_ID" --query id -o tsv 2>/dev/null || \
+            az ad sp show --id "$APP_ID" --query id -o tsv)
+          echo "Service Principal Object ID: $SP_OBJECT_ID"
+
+          # Create Federated Credential for main branch
+          az ad app federated-credential create --id "$APP_ID" --parameters '{
+            "name": "github-main",
+            "issuer": "https://token.actions.githubusercontent.com",
+            "subject": "repo:'"$REPO"':ref:refs/heads/main",
+            "audiences": ["api://AzureADTokenExchange"]
+          }'
+
+          # Create Federated Credential for pull requests
+          az ad app federated-credential create --id "$APP_ID" --parameters '{
+            "name": "github-pr",
+            "issuer": "https://token.actions.githubusercontent.com",
+            "subject": "repo:'"$REPO"':pull_request",
+            "audiences": ["api://AzureADTokenExchange"]
+          }'
+
+          # Create Federated Credential for environments
+          for ENV in staging production; do
+            az ad app federated-credential create --id "$APP_ID" --parameters '{
+              "name": "github-env-'"$ENV"'",
+              "issuer": "https://token.actions.githubusercontent.com",
+              "subject": "repo:'"$REPO"':environment:'"$ENV"'",
+              "audiences": ["api://AzureADTokenExchange"]
+            }'
+          done
+
+          # Assign RBAC role
+          if [ -n "$RESOURCE_GROUP" ]; then
+            SCOPE="/subscriptions/$SUBSCRIPTION_ID/resourceGroups/$RESOURCE_GROUP"
+            echo "Assigning Contributor role at resource group scope: $RESOURCE_GROUP"
+          else
+            SCOPE="/subscriptions/$SUBSCRIPTION_ID"
+            echo "Assigning Contributor role at subscription scope"
+          fi
+
+          az role assignment create \
+            --assignee-object-id "$SP_OBJECT_ID" \
+            --assignee-principal-type ServicePrincipal \
+            --role "Contributor" \
+            --scope "$SCOPE"
+
+          # Get Tenant ID
+          TENANT_ID=$(az account show --query tenantId -o tsv)
+
+          # Output values
+          echo "client_id=$APP_ID" >> $GITHUB_OUTPUT
+          echo "tenant_id=$TENANT_ID" >> $GITHUB_OUTPUT
+          echo "subscription_id=$SUBSCRIPTION_ID" >> $GITHUB_OUTPUT
+
+      - name: Store values as repository variables
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Setting repository variables for OIDC authentication..."
+
+          gh variable set AZURE_CLIENT_ID --body "${{ steps.setup.outputs.client_id }}"
+          gh variable set AZURE_TENANT_ID --body "${{ steps.setup.outputs.tenant_id }}"
+          gh variable set AZURE_SUBSCRIPTION_ID --body "${{ steps.setup.outputs.subscription_id }}"
+
+          echo ""
+          echo "============================================"
+          echo "✅ Azure OIDC Setup Complete!"
+          echo "============================================"
+          echo ""
+          echo "Repository variables configured:"
+          echo "  AZURE_CLIENT_ID:       ${{ steps.setup.outputs.client_id }}"
+          echo "  AZURE_TENANT_ID:       ${{ steps.setup.outputs.tenant_id }}"
+          echo "  AZURE_SUBSCRIPTION_ID: ${{ steps.setup.outputs.subscription_id }}"
+          echo ""
+          echo "Federated credentials created for:"
+          echo "  - refs/heads/main (push to main)"
+          echo "  - pull_request (PR validation)"
+          echo "  - environment:staging"
+          echo "  - environment:production"
+          echo ""
+          echo "Your CD workflow can now authenticate using:"
+          echo "  - uses: azure/login@v2"
+          echo "    with:"
+          echo "      client-id: \${{ vars.AZURE_CLIENT_ID }}"
+          echo "      tenant-id: \${{ vars.AZURE_TENANT_ID }}"
+          echo "      subscription-id: \${{ vars.AZURE_SUBSCRIPTION_ID }}"
+          echo "============================================"
