@@ -27,7 +27,9 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 | Category | Contents |
 |----------|----------|
 | **CI/CD** | GitHub Actions for build, test, lint, deploy (staging + production with approvals) |
-| **Security** | CodeQL scanning, Dependabot, dependency review, secret scanning |
+| **Security** | CodeQL scanning, Dependabot, dependency review, secret scanning, TruffleHog |
+| **IaC Guardrails** | Terraform fmt/validate/tflint + Bicep build/lint + Checkov security scanning |
+| **Azure OIDC** | Automated federated credential setup for passwordless GitHub → Azure auth |
 | **Branching** | Trunk-based strategy with `main`, `release/*`, `feature/*`, `hotfix/*` |
 | **Templates** | PR template, bug report, feature request issue forms |
 | **Governance** | CODEOWNERS, SECURITY.md, CONTRIBUTING.md, conventional commits |
@@ -59,7 +61,9 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 │   └── workflows/
 │       ├── ci.yml              # Continuous Integration
 │       ├── cd.yml              # Continuous Deployment
-│       ├── codeql.yml          # Security scanning
+│       ├── codeql.yml          # Security scanning (manual trigger)
+│       ├── iac-guardrails.yml  # Terraform + Bicep validation
+│       ├── azure-oidc-setup.yml # Azure federated credential setup
 │       ├── release.yml         # Semantic versioning releases
 │       ├── label-sync.yml      # Label automation
 │       ├── stale.yml           # Stale issue/PR cleanup
@@ -78,12 +82,14 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 │   ├── terraform/              # Terraform IaC
 │   │   ├── main.tf
 │   │   ├── outputs.tf
+│   │   ├── .tflint.hcl         # TFLint configuration
 │   │   └── environments/
 │   │       ├── dev.tfvars
 │   │       ├── staging.tfvars
 │   │       └── production.tfvars
 │   └── bicep/                  # Azure Bicep IaC
-│       └── main.bicep
+│       ├── main.bicep
+│       └── bicepconfig.json    # Bicep linting rules
 ├── src/                        # Application source code
 ├── tests/
 │   ├── unit/
@@ -91,6 +97,7 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 │   └── e2e/
 ├── .gitignore
 ├── CONTRIBUTING.md
+├── LICENSE
 ├── SECURITY.md
 └── README.md
 ```
@@ -112,7 +119,18 @@ After creating your repo, run the **Repository Bootstrap** workflow:
 3. Enter your team name, project name, and primary language
 4. The workflow configures CODEOWNERS, creates initial issues and milestones
 
-### 3. Configure Branch Protection
+### 3. Set Up Azure OIDC (Optional)
+
+For passwordless Azure deployments, run the **Azure OIDC Setup** workflow:
+
+1. Go to **Actions** → **Azure OIDC Setup**
+2. Click **"Run workflow"**
+3. Enter your Azure Subscription ID and (optionally) a resource group
+4. The workflow creates an App Registration, federated credentials, and sets repository variables
+
+This eliminates the need for storing Azure client secrets in GitHub.
+
+### 4. Configure Branch Protection
 
 Apply these branch protection rules to `main`:
 
@@ -131,7 +149,7 @@ Or configure manually in **Settings** → **Branches** → **Branch protection r
 - ❌ Allow force pushes
 - ❌ Allow deletions
 
-### 4. Configure Environments
+### 5. Configure Environments
 
 Set up deployment environments in **Settings** → **Environments**:
 
@@ -140,7 +158,7 @@ Set up deployment environments in **Settings** → **Environments**:
 | `staging` | Required reviewers (1) |
 | `production` | Required reviewers (2), wait timer (5 min) |
 
-### 5. Add Secrets and Variables
+### 6. Add Secrets and Variables
 
 Configure these in **Settings** → **Secrets and variables** → **Actions**:
 
@@ -201,7 +219,9 @@ For non-optional governance across all repos:
 |---------|-----------|
 | Code review | CODEOWNERS + required approvals |
 | Code quality | CI pipeline (lint, test, build) |
-| Security | CodeQL + Dependabot + dependency review |
+| Security | CodeQL + Dependabot + TruffleHog + dependency review |
+| IaC guardrails | Terraform validate/tflint + Bicep lint + Checkov |
+| Azure auth | OIDC federated credentials (no stored secrets) |
 | Commit format | Conventional commits (enforced via CI) |
 | Dependencies | Dependabot + vulnerability alerts |
 | Stale cleanup | Automated stale issue/PR management |
@@ -288,4 +308,4 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting procedures.
 
 ## License
 
-[Choose your license] - See [LICENSE](LICENSE) file for details.
+MIT - See [LICENSE](LICENSE) file for details.
