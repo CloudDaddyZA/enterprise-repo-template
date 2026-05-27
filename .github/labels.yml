@@ -1,0 +1,119 @@
+# ============================================================================
+# Repository Labels Configuration
+# ============================================================================
+# Managed by .github/workflows/label-sync.yml
+# Edit this file to add/modify labels, then push to main.
+# ============================================================================
+
+# --- Type Labels ---
+- name: "bug"
+  color: "d73a4a"
+  description: "Something isn't working"
+
+- name: "enhancement"
+  color: "a2eeef"
+  description: "New feature or request"
+
+- name: "documentation"
+  color: "0075ca"
+  description: "Improvements or additions to documentation"
+
+- name: "infrastructure"
+  color: "d4c5f9"
+  description: "Infrastructure and platform changes"
+
+- name: "security"
+  color: "e11d48"
+  description: "Security-related issue or improvement"
+
+- name: "performance"
+  color: "f9d0c4"
+  description: "Performance improvement"
+
+- name: "tech-debt"
+  color: "fef2c0"
+  description: "Technical debt or code improvement"
+
+- name: "testing"
+  color: "bfd4f2"
+  description: "Testing improvements"
+
+# --- Priority Labels ---
+- name: "priority: critical"
+  color: "b60205"
+  description: "Must be addressed immediately"
+
+- name: "priority: high"
+  color: "d93f0b"
+  description: "Important, should be addressed soon"
+
+- name: "priority: medium"
+  color: "fbca04"
+  description: "Normal priority"
+
+- name: "priority: low"
+  color: "0e8a16"
+  description: "Nice to have, lower priority"
+
+# --- Status Labels ---
+- name: "triage"
+  color: "ededed"
+  description: "Needs triage and categorization"
+
+- name: "in-progress"
+  color: "1d76db"
+  description: "Currently being worked on"
+
+- name: "blocked"
+  color: "b60205"
+  description: "Blocked by external dependency"
+
+- name: "needs-review"
+  color: "fbca04"
+  description: "Needs review from team"
+
+- name: "stale"
+  color: "ededed"
+  description: "No recent activity"
+
+# --- Scope Labels ---
+- name: "frontend"
+  color: "c5def5"
+  description: "Frontend/UI changes"
+
+- name: "backend"
+  color: "bfdadc"
+  description: "Backend/API changes"
+
+- name: "devops"
+  color: "d4c5f9"
+  description: "CI/CD and DevOps changes"
+
+- name: "database"
+  color: "f9d0c4"
+  description: "Database changes"
+
+# --- Special Labels ---
+- name: "breaking-change"
+  color: "b60205"
+  description: "Introduces a breaking change"
+
+- name: "good-first-issue"
+  color: "7057ff"
+  description: "Good for newcomers"
+
+- name: "help-wanted"
+  color: "008672"
+  description: "Extra attention is needed"
+
+- name: "epic"
+  color: "3e4b9e"
+  description: "Epic/large initiative"
+
+- name: "pinned"
+  color: "006b75"
+  description: "Pinned - will not be auto-closed"
+
+- name: "dependencies"
+  color: "0366d6"
+  description: "Dependency updates"

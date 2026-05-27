@@ -1,0 +1,112 @@
+# ============================================================================
+# .gitignore - Enterprise Template
+# ============================================================================
+# Comprehensive .gitignore for multi-language projects.
+# Remove sections that don't apply to your project.
+# ============================================================================
+
+# --- OS Files ---
+.DS_Store
+Thumbs.db
+Desktop.ini
+*.swp
+*.swo
+*~
+
+# --- IDE / Editor ---
+.idea/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.sublime-workspace
+*.sublime-project
+
+# --- Environment & Secrets ---
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*.cert
+secrets/
+.secrets/
+
+# --- Node.js ---
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+dist/
+build/
+coverage/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+venv/
+.venv/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- .NET ---
+bin/
+obj/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+packages/
+TestResults/
+
+# --- Go ---
+vendor/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# --- Java ---
+target/
+*.class
+*.jar
+*.war
+*.ear
+
+# --- Terraform ---
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraform.lock.hcl
+
+# --- Docker ---
+docker-compose.override.yml
+
+# --- Build Artifacts ---
+dist/
+build/
+out/
+tmp/
+temp/
+
+# --- Logs ---
+logs/
+*.log
+
+# --- Test ---
+coverage/
+.nyc_output/
+test-results/

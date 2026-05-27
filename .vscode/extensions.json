@@ -1,0 +1,16 @@
+{
+  "recommendations": [
+    "github.copilot",
+    "github.copilot-chat",
+    "github.vscode-github-actions",
+    "ms-azuretools.vscode-bicep",
+    "hashicorp.terraform",
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    "eamodio.gitlens",
+    "ms-azuretools.vscode-docker",
+    "redhat.vscode-yaml",
+    "streetsidesoftware.code-spell-checker",
+    "ms-vscode-remote.remote-containers"
+  ]
+}

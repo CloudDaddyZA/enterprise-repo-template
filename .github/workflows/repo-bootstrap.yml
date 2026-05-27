@@ -1,0 +1,100 @@
+# ============================================================================
+# Repository Setup Automation
+# ============================================================================
+# This workflow runs when a repository is created from this template.
+# It bootstraps the new repository with team-specific configuration.
+#
+# Trigger manually after creating from template, or integrate with
+# GitHub Apps / organization webhooks for full automation.
+# ============================================================================
+
+name: Repository Bootstrap
+
+on:
+  workflow_dispatch:
+    inputs:
+      team_name:
+        description: "Team name (for CODEOWNERS and permissions)"
+        required: true
+        type: string
+      project_name:
+        description: "Project name"
+        required: true
+        type: string
+      language:
+        description: "Primary language/framework"
+        required: true
+        type: choice
+        options:
+          - javascript
+          - typescript
+          - python
+          - go
+          - dotnet
+          - java
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  bootstrap:
+    name: Bootstrap Repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure repository
+        run: |
+          echo "Bootstrapping repository for team: ${{ inputs.team_name }}"
+          echo "Project: ${{ inputs.project_name }}"
+          echo "Language: ${{ inputs.language }}"
+
+          # Update CODEOWNERS with team
+          sed -i "s/@org\/engineering-leads/@org\/${{ inputs.team_name }}/g" .github/CODEOWNERS
+
+          # Update Terraform project name
+          sed -i "s/myproject/${{ inputs.project_name }}/g" infra/terraform/environments/*.tfvars
+
+      - name: Create initial milestone
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.issues.createMilestone({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: 'v0.1.0 - Initial Setup',
+              description: 'Initial project setup and scaffolding',
+              due_on: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
+            });
+
+      - name: Create setup issues
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issues = [
+              { title: 'Configure CI/CD pipeline', labels: ['devops', 'priority: high'] },
+              { title: 'Set up development environment', labels: ['devops'] },
+              { title: 'Define initial API contracts', labels: ['enhancement'] },
+              { title: 'Configure monitoring and alerting', labels: ['infrastructure'] },
+              { title: 'Set up staging environment', labels: ['infrastructure'] },
+              { title: 'Write initial documentation', labels: ['documentation'] },
+            ];
+
+            for (const issue of issues) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: issue.title,
+                labels: issue.labels,
+              });
+            }
+
+      - name: Commit configuration changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "chore: bootstrap repository for ${{ inputs.team_name }}"
+          git push

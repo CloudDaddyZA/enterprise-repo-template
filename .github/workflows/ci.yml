@@ -1,0 +1,139 @@
+# ============================================================================
+# CI Pipeline - Continuous Integration
+# ============================================================================
+# Triggers on pull requests and pushes to main/release branches.
+# Runs linting, testing, security scanning, and build validation.
+# ============================================================================
+
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/*'
+  pull_request:
+    branches:
+      - main
+      - 'release/*'
+      - 'feature/*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+  security-events: write
+
+jobs:
+  # --------------------------------------------------------------------------
+  # Lint and Format Check
+  # --------------------------------------------------------------------------
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run linting
+        run: |
+          echo "Add your linting commands here"
+          # Examples:
+          # npm run lint
+          # dotnet format --verify-no-changes
+          # go vet ./...
+          # terraform fmt -check -recursive
+
+  # --------------------------------------------------------------------------
+  # Unit Tests
+  # --------------------------------------------------------------------------
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run tests
+        run: |
+          echo "Add your test commands here"
+          # Examples:
+          # npm test -- --coverage
+          # dotnet test --collect:"XPlat Code Coverage"
+          # go test ./... -coverprofile=coverage.out
+          # pytest --cov=src tests/
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+
+  # --------------------------------------------------------------------------
+  # Security Scanning
+  # --------------------------------------------------------------------------
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run CodeQL Analysis
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ vars.CODEQL_LANGUAGES || 'javascript' }}
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+
+  # --------------------------------------------------------------------------
+  # Dependency Review (PRs only)
+  # --------------------------------------------------------------------------
+  dependency-review:
+    name: Dependency Review
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  # --------------------------------------------------------------------------
+  # Build
+  # --------------------------------------------------------------------------
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build application
+        run: |
+          echo "Add your build commands here"
+          # Examples:
+          # npm run build
+          # dotnet build --configuration Release
+          # go build ./...
+          # docker build -t app:${{ github.sha }} .
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: dist/
+          retention-days: 5

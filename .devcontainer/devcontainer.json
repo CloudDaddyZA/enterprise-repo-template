@@ -1,0 +1,69 @@
+// ==========================================================================
+// Dev Container Configuration - Enterprise Template
+// ==========================================================================
+// Provides a consistent development environment for all contributors.
+// Works with VS Code Dev Containers and GitHub Codespaces.
+// ==========================================================================
+{
+  "name": "Enterprise Dev Environment",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu-22.04",
+
+  // Features to install
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/azure-cli:1": {},
+    "ghcr.io/devcontainers/features/terraform:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {},
+    "ghcr.io/devcontainers/features/git:1": {
+      "version": "latest"
+    }
+  },
+
+  // VS Code settings
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "editor.formatOnSave": true,
+        "editor.rulers": [100],
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true,
+        "git.autofetch": true,
+        "git.enableSmartCommit": true,
+        "terminal.integrated.defaultProfile.linux": "bash"
+      },
+      "extensions": [
+        "github.copilot",
+        "github.copilot-chat",
+        "github.vscode-github-actions",
+        "ms-azuretools.vscode-bicep",
+        "hashicorp.terraform",
+        "ms-vscode.vscode-typescript-next",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "eamodio.gitlens",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "streetsidesoftware.code-spell-checker"
+      ]
+    }
+  },
+
+  // Ports to forward
+  "forwardPorts": [3000, 5000, 8080],
+
+  // Post-create commands
+  "postCreateCommand": "echo 'Dev container ready! Run your project setup commands.'",
+
+  // Environment variables
+  "containerEnv": {
+    "EDITOR": "code --wait"
+  },
+
+  // Mount configuration
+  "mounts": [],
+
+  // Run as non-root user
+  "remoteUser": "vscode"
+}

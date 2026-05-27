@@ -1,0 +1,56 @@
+# ============================================================================
+# CODEOWNERS - Enterprise Repository Template
+# ============================================================================
+# This file defines code ownership for automatic PR review assignment.
+# See: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+#
+# Format: <pattern> <owner1> <owner2> ...
+# Owners can be @username, @org/team-name, or email addresses.
+# ============================================================================
+
+# ---------------------------------------------------------------------------
+# Default owners (fallback for any file not matched below)
+# ---------------------------------------------------------------------------
+*                           @org/engineering-leads
+
+# ---------------------------------------------------------------------------
+# Infrastructure / Platform
+# ---------------------------------------------------------------------------
+/infra/                     @org/platform-team
+*.tf                        @org/platform-team
+*.bicep                     @org/platform-team
+Dockerfile                  @org/platform-team
+docker-compose*.yml         @org/platform-team
+
+# ---------------------------------------------------------------------------
+# CI/CD and GitHub Configuration
+# ---------------------------------------------------------------------------
+/.github/                   @org/devops-team @org/engineering-leads
+/.github/workflows/         @org/devops-team
+
+# ---------------------------------------------------------------------------
+# Security
+# ---------------------------------------------------------------------------
+SECURITY.md                 @org/security-team
+/.github/dependabot.yml     @org/security-team @org/devops-team
+
+# ---------------------------------------------------------------------------
+# Documentation
+# ---------------------------------------------------------------------------
+/docs/                      @org/engineering-leads
+/docs/adr/                  @org/architecture-team
+
+# ---------------------------------------------------------------------------
+# Source Code
+# ---------------------------------------------------------------------------
+/src/                       @org/development-team
+/tests/                     @org/development-team @org/qa-team
+
+# ---------------------------------------------------------------------------
+# Configuration and Dependencies
+# ---------------------------------------------------------------------------
+package.json                @org/development-team @org/security-team
+package-lock.json           @org/development-team
+requirements.txt            @org/development-team @org/security-team
+go.mod                      @org/development-team @org/security-team
+*.csproj                    @org/development-team
