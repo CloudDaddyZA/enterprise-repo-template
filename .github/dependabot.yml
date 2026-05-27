@@ -7,12 +7,12 @@
 
 version: 2
 
-registries: {}
-  # Example for private registries:
-  # npm-private:
-  #   type: npm-registry
-  #   url: https://npm.pkg.github.com
-  #   token: ${{ secrets.PACKAGES_TOKEN }}
+# registries:
+#   Example for private registries:
+#   npm-private:
+#     type: npm-registry
+#     url: https://npm.pkg.github.com
+#     token: ${{ secrets.PACKAGES_TOKEN }}
 
 updates:
   # --- GitHub Actions ---
@@ -27,8 +27,6 @@ updates:
     labels:
       - "dependencies"
       - "devops"
-    reviewers:
-      - "org/devops-team"
     open-pull-requests-limit: 5
 
   # --- Terraform ---
@@ -43,8 +41,6 @@ updates:
     labels:
       - "dependencies"
       - "infrastructure"
-    reviewers:
-      - "org/platform-team"
     open-pull-requests-limit: 5
 
   # --- Docker ---

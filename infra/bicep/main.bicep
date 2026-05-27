@@ -22,6 +22,7 @@ param tags object = {}
 // Variables
 // ============================================================================
 
+#disable-next-line no-unused-vars
 var commonTags = union(tags, {
   environment: environment
   managedBy: 'bicep'
