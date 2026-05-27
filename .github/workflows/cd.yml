@@ -40,7 +40,7 @@ jobs:
       url: ${{ vars.STAGING_URL }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Deploy to staging
         run: |
@@ -68,7 +68,7 @@ jobs:
       url: ${{ vars.PRODUCTION_URL }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Deploy to production
         run: |
