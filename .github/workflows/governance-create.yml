@@ -188,22 +188,23 @@ jobs:
             REQUIRE_CODEOWNER=$(yq ".rulesets[$i].rules.pull_request.require_code_owner_review" "$PROFILE_FILE")
             STATUS_CHECKS=$(yq -o=json ".rulesets[$i].rules.required_status_checks.required_status_checks" "$PROFILE_FILE")
 
-            gh api "repos/$REPO/rulesets" --method POST --input <(cat <<EOF
-          {
-            "name": "$RULESET_NAME",
-            "target": "branch",
-            "enforcement": "active",
-            "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
-            "rules": [
-              {"type": "pull_request", "parameters": {"required_approving_review_count": $APPROVALS, "dismiss_stale_reviews_on_push": $DISMISS_STALE, "require_code_owner_review": $REQUIRE_CODEOWNER, "require_last_push_approval": false}},
-              {"type": "required_status_checks", "parameters": {"strict_required_status_checks_policy": true, "required_status_checks": $STATUS_CHECKS}},
-              {"type": "deletion"},
-              {"type": "non_fast_forward"}
-            ],
-            "bypass_actors": []
-          }
-EOF
-            ) --silent
+            RULESET_BODY=$(cat <<-EOFR
+            {
+              "name": "$RULESET_NAME",
+              "target": "branch",
+              "enforcement": "active",
+              "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
+              "rules": [
+                {"type": "pull_request", "parameters": {"required_approving_review_count": $APPROVALS, "dismiss_stale_reviews_on_push": $DISMISS_STALE, "require_code_owner_review": $REQUIRE_CODEOWNER, "require_last_push_approval": false}},
+                {"type": "required_status_checks", "parameters": {"strict_required_status_checks_policy": true, "required_status_checks": $STATUS_CHECKS}},
+                {"type": "deletion"},
+                {"type": "non_fast_forward"}
+              ],
+              "bypass_actors": []
+            }
+            EOFR
+            )
+            gh api "repos/$REPO/rulesets" --method POST --input <(echo "$RULESET_BODY") --silent
             echo "   ✅ Ruleset: $RULESET_NAME"
           done
 
