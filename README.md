@@ -43,6 +43,7 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 | **Azure Integration** | OIDC, RBAC, Key Vault, federated credentials, resource groups                      |
 | **Audit & Evidence**  | Immutable audit trail, compliance history, change tracking, exceptions             |
 | **MCP Server**        | AI Agent / Copilot governance operations via Model Context Protocol                |
+| **Chat Participant**  | VS Code `@governance` Copilot Chat commands for conversational governance          |
 | **Automation**        | Repository bootstrap workflow for team-specific setup                              |
 
 ---
@@ -292,6 +293,8 @@ language: ["javascript", "python"] # Add your languages
 
 This template includes a full **Governance Engine** for automated repository lifecycle management.
 
+![Governance Engine Architecture](docs/images/governance-engine-architecture.png)
+
 ### Create a New Governed Repository
 
 ```bash
@@ -337,6 +340,19 @@ gh workflow run governance-remediate.yml \
 | `fabric-project`        | Microsoft Fabric analytics, workspace sync, data gov      |
 
 See [governance/README.md](governance/README.md) for full documentation.
+
+### Copilot Chat Participant (`@governance`)
+
+Use the governance engine directly in VS Code Copilot Chat:
+
+```
+@governance /profiles
+@governance /create azure-ai-landing-zone my-service backend-team "My Service"
+@governance /assess cloud-native-app my-org/existing-repo
+@governance /remediate data-platform my-org/my-repo safe
+```
+
+See [governance/copilot-participant/](governance/copilot-participant/) for setup and available commands.
 
 ### Alternative Automation
 

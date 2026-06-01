@@ -49,3 +49,9 @@ Model Context Protocol server that enables GitHub Copilot and AI agents to manag
 ## Resources
 
 The server exposes governance profiles and the capability matrix as resources that AI agents can read for context.
+
+## Related
+
+- **Chat Participant** — For interactive VS Code Copilot Chat usage, see [`../copilot-participant/`](../copilot-participant/)
+- **CLI Scripts** — For direct CLI usage, see [`../engine/`](../engine/)
+- **GitHub Actions** — For CI/CD integration, see the `governance-*.yml` workflows

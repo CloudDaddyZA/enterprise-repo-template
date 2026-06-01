@@ -1,6 +1,8 @@
 # Governance Engine
 
-The Golden Repository Governance Engine automates the creation, assessment, and remediation of repositories against enterprise governance standards. It is designed to be operated by **GitHub Copilot / AI Agents** via MCP, **GitHub Actions workflows**, or **CLI scripts**.
+The Golden Repository Governance Engine automates the creation, assessment, and remediation of repositories against enterprise governance standards. It is designed to be operated by **GitHub Copilot / AI Agents** via MCP, **VS Code Chat Participant**, **GitHub Actions workflows**, or **CLI scripts**.
+
+![Governance Engine Architecture](../docs/images/governance-engine-architecture.png)
 
 ## Architecture
 
@@ -22,6 +24,11 @@ governance/
 ├── mcp-server/                  # MCP Server for Copilot / AI Agent
 │   ├── src/index.js            # MCP tool definitions and handlers
 │   ├── package.json
+│   └── README.md
+├── copilot-participant/         # VS Code Chat Participant (@governance)
+│   ├── src/extension.ts        # Chat participant handler
+│   ├── package.json            # VS Code extension manifest
+│   ├── tsconfig.json
 │   └── README.md
 └── README.md                    # This file
 ```
@@ -253,6 +260,43 @@ npm start
 
 See [mcp-server/README.md](mcp-server/README.md) for VS Code integration and available tools.
 
+## Copilot Chat Participant (`@governance`)
+
+The Chat Participant provides a conversational interface directly in VS Code Copilot Chat.
+
+### Available Commands
+
+| Command | Description |
+|---------|-------------|
+| `/create` | Create a new governed repository from a profile |
+| `/assess` | Assess compliance of an existing repository |
+| `/remediate` | Fix governance gaps (safe/semi-auto/auto modes) |
+| `/profiles` | List available governance profiles |
+| `/report` | Generate a compliance report (markdown/JSON/badge) |
+| `/azure` | Set up Azure OIDC, RBAC, and Key Vault |
+
+### Example Usage
+
+```
+@governance /profiles
+@governance /create azure-ai-landing-zone my-service backend-team "My Service"
+@governance /assess cloud-native-app my-org/existing-repo
+@governance /remediate data-platform my-org/my-repo semi-auto
+@governance /azure azure-ai-landing-zone my-org/my-repo <subscription-id>
+```
+
+### Setup
+
+```bash
+cd governance/copilot-participant
+npm install
+npm run build
+```
+
+Then press **F5** in VS Code to launch with the extension loaded.
+
+See [copilot-participant/README.md](copilot-participant/README.md) for full details.
+
 ## Capability Matrix
 
 | Capability                        | Org Level (Admin) | Repo Level (Admin) | Automation (Agent) | Notes                          |
@@ -269,12 +313,13 @@ See [mcp-server/README.md](mcp-server/README.md) for VS Code integration and ava
 
 ## Integration & Automation Options
 
-| Method                     | Best For                                     | Trigger Types                     |
-| -------------------------- | -------------------------------------------- | --------------------------------- |
-| GitHub Actions Workflow    | Standard CI/CD, scheduled drift detection    | Manual, schedule, webhook         |
-| MCP Server (Copilot Agent) | Conversational governance, ad-hoc operations | User/AI prompt                    |
-| CLI Scripts                | Local development, automation pipelines      | Manual, scripts                   |
-| GitHub App                 | Scale across many orgs (future)              | Repository created, policy change |
+| Method                       | Best For                                     | Trigger Types                     |
+| ---------------------------- | -------------------------------------------- | --------------------------------- |
+| GitHub Actions Workflow      | Standard CI/CD, scheduled drift detection    | Manual, schedule, webhook         |
+| MCP Server (Copilot Agent)   | Conversational governance, ad-hoc operations | User/AI prompt                    |
+| Chat Participant (@governance) | VS Code interactive governance             | User prompt in Copilot Chat       |
+| CLI Scripts                  | Local development, automation pipelines      | Manual, scripts                   |
+| GitHub App                   | Scale across many orgs (future)              | Repository created, policy change |
 
 ### Event Triggers
 
