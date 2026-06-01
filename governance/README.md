@@ -1,6 +1,6 @@
 # Governance Engine
 
-The Golden Repository Governance Engine automates the creation, assessment, and remediation of repositories against enterprise governance standards.
+The Golden Repository Governance Engine automates the creation, assessment, and remediation of repositories against enterprise governance standards. It is designed to be operated by **GitHub Copilot / AI Agents** via MCP, **GitHub Actions workflows**, or **CLI scripts**.
 
 ## Architecture
 
@@ -9,12 +9,20 @@ governance/
 ├── profiles/                    # YAML governance profiles (archetypes)
 │   ├── azure-ai-landing-zone.yml
 │   ├── cloud-native-app.yml
-│   └── data-platform.yml
+│   ├── data-platform.yml
+│   ├── aks-platform.yml
+│   └── fabric-project.yml
 ├── engine/                      # Core engine scripts
 │   ├── create-repo.sh          # Creates and governs a new repository
 │   ├── assess-repo.sh          # Assesses compliance against a profile
 │   ├── remediate-repo.sh       # Fixes governance gaps
+│   ├── azure-integrate.sh      # Azure OIDC, RBAC, Key Vault setup
+│   ├── audit-log.sh            # Audit & evidence store functions
 │   └── format-report.sh        # Formats compliance reports
+├── mcp-server/                  # MCP Server for Copilot / AI Agent
+│   ├── src/index.js            # MCP tool definitions and handlers
+│   ├── package.json
+│   └── README.md
 └── README.md                    # This file
 ```
 
@@ -61,6 +69,8 @@ flowchart LR
 | `azure-ai-landing-zone` | Full Azure AI project      | OIDC, RBAC, Key Vault, 4 environments, signed commits        |
 | `cloud-native-app`      | Containerized microservice | Docker, K8s, 3 environments, lighter security                |
 | `data-platform`         | Data engineering           | Strict compliance, signed commits, wiki, data classification |
+| `aks-platform`          | AKS platform engineering   | GitOps, Flux, 4 environments (incl. DR), container scanning  |
+| `fabric-project`        | Microsoft Fabric analytics | Workspace sync, data governance, wiki, signed commits        |
 
 ### Profile Structure
 
@@ -186,5 +196,88 @@ The engine follows these principles:
 - **Safe Execution**: Default mode previews changes before applying
 - **Least Privilege**: Uses minimum required permissions
 - **Approval Gates**: Semi-auto mode for sensitive changes
-- **Audit Logging**: All changes recorded in workflow run logs
+- **Audit Logging**: All changes recorded via audit-log.sh and workflow artifacts
 - **Rollback Support**: Rulesets and settings can be reverted
+
+## Azure Integration Layer
+
+The `azure-integrate.sh` script provisions Azure resources for governed repositories:
+
+```bash
+# Set up Azure OIDC + RBAC for a repository
+./governance/engine/azure-integrate.sh azure-ai-landing-zone my-org/my-repo <subscription-id> <resource-group>
+```
+
+| Component | Action |
+|-----------|--------|
+| Entra ID App Registration | Creates app + service principal |
+| OIDC Federated Credentials | Configures GitHub → Azure trust per profile |
+| RBAC Role Assignments | Assigns roles defined in profile |
+| Key Vault | Creates vault with RBAC authorization (if enabled) |
+| Resource Group | Auto-creates with governance tags (if not provided) |
+| GitHub Variables | Sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` |
+
+## Audit & Evidence Store
+
+All governance operations produce audit trails:
+
+| Artifact | Location | Purpose |
+|----------|----------|---------|
+| Audit trail | `audit-trail.jsonl` | Every action logged with timestamp, actor, details |
+| Compliance history | `compliance-history.jsonl` | Score over time per repository |
+| Change history | `change-history.jsonl` | Every setting change with old/new values |
+| Exceptions | `exceptions.jsonl` | Documented exceptions with expiry dates |
+| Evidence | `evidence/` directory | Compliance report snapshots |
+
+Source the module in your scripts:
+
+```bash
+source ./governance/engine/audit-log.sh
+audit_log "category" "action" "target" "details"
+record_compliance "org/repo" "profile" 95
+record_change "org/repo" "repository" "visibility" "public" "private"
+```
+
+## MCP Server (Copilot / AI Agent)
+
+The MCP server enables AI agents to operate the governance engine through natural language.
+
+```bash
+# Install and start
+cd governance/mcp-server
+npm install
+npm start
+```
+
+See [mcp-server/README.md](mcp-server/README.md) for VS Code integration and available tools.
+
+## Capability Matrix
+
+| Capability | Org Level (Admin) | Repo Level (Admin) | Automation (Agent) | Notes |
+|---|---|---|---|---|
+| Org Rulesets | ✅ | ❌ | ⚠️ (if allowed) | Requires org admin |
+| Repo Rulesets / Branch Protection | ❌ | ✅ | ✅ | Can be automated via API / CLI |
+| Environments | ❌ | ✅ | ✅ | Approvals per env |
+| Secrets / Variables | ❌ | ✅ | ✅ | Repo or Org level |
+| Teams & Permissions | ✅ | ❌ | ✅ | Depends on rights |
+| Workflows / Files | ❌ | ✅ | ✅ | Via PR or direct |
+| Security Scanning | ✅ | ✅ | ✅ | If enabled by org |
+| Projects / Labels / Milestones | ❌ | ✅ | ✅ | Repo level |
+| Azure OIDC / App Reg | ❌ | ❌ | ✅ | Requires Azure access |
+
+## Integration & Automation Options
+
+| Method | Best For | Trigger Types |
+|--------|----------|---------------|
+| GitHub Actions Workflow | Standard CI/CD, scheduled drift detection | Manual, schedule, webhook |
+| MCP Server (Copilot Agent) | Conversational governance, ad-hoc operations | User/AI prompt |
+| CLI Scripts | Local development, automation pipelines | Manual, scripts |
+| GitHub App | Scale across many orgs (future) | Repository created, policy change |
+
+### Event Triggers
+
+- **Manual** — User or Copilot command
+- **Repository Created** — Webhook triggers governance bootstrap
+- **Schedule** — Weekly drift detection (Monday 06:00 UTC)
+- **Pull Request Merged** — Validate post-merge compliance
+- **Policy Change Detected** — Re-assess affected repositories

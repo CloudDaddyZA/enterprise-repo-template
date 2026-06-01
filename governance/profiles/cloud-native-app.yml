@@ -170,4 +170,31 @@ teams:
     permission: push
 
 project:
-  enabled: false
+  enabled: true
+  name: "${PROJECT_NAME}"
+  views:
+    - name: Board
+      layout: board
+
+# --------------------------------------------------------------------------
+# Webhooks
+# --------------------------------------------------------------------------
+webhooks:
+  - url: "${WEBHOOK_URL:-}"
+    events:
+      - push
+      - pull_request
+      - deployment_status
+    content_type: json
+    active: true
+
+# --------------------------------------------------------------------------
+# Milestones
+# --------------------------------------------------------------------------
+milestones:
+  - title: "v1.0 - MVP"
+    description: "Core service with CI/CD and container deployment"
+  - title: "v1.1 - Observability"
+    description: "Monitoring, logging, and health checks"
+  - title: "v2.0 - Production Ready"
+    description: "Scaling, security hardening, and DR"

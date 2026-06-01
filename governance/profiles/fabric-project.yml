@@ -1,0 +1,274 @@
+# ============================================================================
+# Governance Profile: Fabric Project
+# ============================================================================
+# Profile for Microsoft Fabric / Power BI analytics projects.
+# Includes data governance, lineage, and Fabric workspace integration.
+# ============================================================================
+
+name: Fabric Project
+description: Microsoft Fabric analytics project with data governance, workspace sync, and compliance
+version: "1.0.0"
+
+# --------------------------------------------------------------------------
+# Repository Settings
+# --------------------------------------------------------------------------
+repository:
+  visibility: private
+  default_branch: main
+  delete_branch_on_merge: true
+  allow_squash_merge: true
+  allow_merge_commit: false
+  allow_rebase_merge: false
+  allow_auto_merge: false
+  has_issues: true
+  has_projects: true
+  has_wiki: true
+  is_template: false
+  topics:
+    - fabric
+    - analytics
+    - data-governance
+    - power-bi
+
+# --------------------------------------------------------------------------
+# Branch Protection / Rulesets
+# --------------------------------------------------------------------------
+rulesets:
+  - name: main-protection
+    target: branch
+    enforcement: active
+    conditions:
+      ref_name:
+        include:
+          - "refs/heads/main"
+    rules:
+      pull_request:
+        required_approving_review_count: 2
+        dismiss_stale_reviews: true
+        require_code_owner_review: true
+        require_last_push_approval: false
+      required_status_checks:
+        strict_required_status_checks_policy: true
+        required_status_checks:
+          - context: "CI Pipeline / Lint & Format"
+          - context: "CI Pipeline / Unit Tests"
+          - context: "CI Pipeline / Build"
+          - context: "Fabric / Validate Definitions"
+      required_linear_history: true
+      required_signatures: true
+      deletion: true
+      non_fast_forward: true
+    bypass_actors:
+      - actor_type: OrganizationAdmin
+
+# --------------------------------------------------------------------------
+# Required Files
+# --------------------------------------------------------------------------
+required_files:
+  - path: CODEOWNERS
+    source: templates/CODEOWNERS
+  - path: SECURITY.md
+    source: templates/SECURITY.md
+  - path: CONTRIBUTING.md
+    source: templates/CONTRIBUTING.md
+  - path: README.md
+    source: templates/README.md
+  - path: .gitignore
+    source: templates/.gitignore
+  - path: .github/pull_request_template.md
+    source: templates/pull_request_template.md
+  - path: .github/copilot-instructions.md
+    source: templates/copilot-instructions.md
+  - path: LICENSE
+    source: templates/LICENSE
+  - path: DATA_CLASSIFICATION.md
+    source: templates/DATA_CLASSIFICATION.md
+
+# --------------------------------------------------------------------------
+# Workflows
+# --------------------------------------------------------------------------
+workflows:
+  - name: ci.yml
+    description: Continuous Integration
+    required: true
+  - name: cd.yml
+    description: Continuous Deployment (Fabric workspace sync)
+    required: true
+  - name: codeql.yml
+    description: CodeQL security scanning
+    required: true
+  - name: release.yml
+    description: Semantic versioning releases
+    required: true
+  - name: fabric-validate.yml
+    description: Fabric definition validation
+    required: false
+
+# --------------------------------------------------------------------------
+# Environments
+# --------------------------------------------------------------------------
+environments:
+  - name: dev
+    protection_rules:
+      required_reviewers: []
+      wait_timer: 0
+    deployment_branch_policy:
+      protected_branches: false
+      custom_branches:
+        - "feature/*"
+        - "main"
+  - name: test
+    protection_rules:
+      required_reviewers:
+        - count: 1
+      wait_timer: 0
+    deployment_branch_policy:
+      protected_branches: false
+      custom_branches:
+        - "main"
+  - name: production
+    protection_rules:
+      required_reviewers:
+        - count: 2
+      wait_timer: 10
+    deployment_branch_policy:
+      protected_branches: true
+
+# --------------------------------------------------------------------------
+# Security Controls
+# --------------------------------------------------------------------------
+security:
+  code_scanning:
+    enabled: true
+    tool: codeql
+    languages: []
+  secret_scanning:
+    enabled: true
+    push_protection: true
+  dependabot:
+    alerts: true
+    security_updates: true
+    version_updates:
+      ecosystems:
+        - package-ecosystem: github-actions
+          directory: /
+          schedule: weekly
+        - package-ecosystem: pip
+          directory: /
+          schedule: weekly
+  dependency_review:
+    enabled: true
+    fail_on_severity: high
+
+# --------------------------------------------------------------------------
+# Azure Integration
+# --------------------------------------------------------------------------
+azure:
+  oidc:
+    enabled: true
+    federated_credentials:
+      - name: github-main
+        subject: "repo:${REPO}:ref:refs/heads/main"
+      - name: github-env-production
+        subject: "repo:${REPO}:environment:production"
+  rbac:
+    assignments:
+      - role: Contributor
+        scope: resource_group
+      - role: "Storage Blob Data Contributor"
+        scope: resource_group
+  key_vault:
+    enabled: true
+    purpose: "Fabric workspace connection strings and service principal credentials"
+  policy_assignments:
+    - name: "Require encryption at rest"
+
+# --------------------------------------------------------------------------
+# Labels
+# --------------------------------------------------------------------------
+labels:
+  - name: bug
+    color: "d73a4a"
+    description: Something isn't working
+  - name: enhancement
+    color: "a2eeef"
+    description: New feature or request
+  - name: documentation
+    color: "0075ca"
+    description: Improvements or additions to documentation
+  - name: security
+    color: "e4e669"
+    description: Security-related issue
+  - name: data-model
+    color: "1d76db"
+    description: Data model changes
+  - name: fabric-workspace
+    color: "7057ff"
+    description: Fabric workspace configuration
+  - name: report
+    color: "d4c5f9"
+    description: Report/dashboard changes
+  - name: pipeline
+    color: "0e8a16"
+    description: Data pipeline changes
+  - name: compliance
+    color: "b60205"
+    description: Compliance-related changes
+  - name: dependencies
+    color: "0366d6"
+    description: Dependency updates
+  - name: priority/high
+    color: "b60205"
+    description: High priority
+  - name: priority/medium
+    color: "fbca04"
+    description: Medium priority
+  - name: priority/low
+    color: "0e8a16"
+    description: Low priority
+
+# --------------------------------------------------------------------------
+# Teams
+# --------------------------------------------------------------------------
+teams:
+  - slug: "${TEAM_SLUG}"
+    permission: push
+  - slug: "${TEAM_SLUG}-leads"
+    permission: maintain
+  - slug: "platform-engineering"
+    permission: admin
+
+# --------------------------------------------------------------------------
+# Project Board
+# --------------------------------------------------------------------------
+project:
+  enabled: true
+  name: "${PROJECT_NAME}"
+  views:
+    - name: Board
+      layout: board
+    - name: Sprint
+      layout: table
+
+# --------------------------------------------------------------------------
+# Webhooks
+# --------------------------------------------------------------------------
+webhooks:
+  - url: "${WEBHOOK_URL:-}"
+    events:
+      - push
+      - pull_request
+      - deployment_status
+    content_type: json
+    active: true
+
+# --------------------------------------------------------------------------
+# Milestones
+# --------------------------------------------------------------------------
+milestones:
+  - title: "v1.0 - Foundation"
+    description: "Initial Fabric workspace setup and data models"
+  - title: "v1.1 - Data Pipelines"
+    description: "Automated data ingestion and transformation"
+  - title: "v2.0 - Production"
+    description: "Production deployment with monitoring and governance"

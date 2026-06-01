@@ -1,0 +1,17 @@
+{
+  "name": "governance-mcp-server",
+  "version": "1.0.0",
+  "description": "MCP Server for Golden Repository Governance Engine - enables GitHub Copilot / AI Agent to manage repository governance",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

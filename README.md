@@ -39,7 +39,10 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 | **Labels**            | Automated label sync from configuration file                                       |
 | **ADRs**              | Architecture Decision Records with template                                        |
 | **AI Coding**         | GitHub Copilot instructions and guardrails                                         |
-| **Governance Engine** | Automated repo creation, compliance assessment, and drift remediation              |
+| **Governance Engine** | 5 profiles, auto-create, compliance assessment, drift remediation                  |
+| **Azure Integration** | OIDC, RBAC, Key Vault, federated credentials, resource groups                      |
+| **Audit & Evidence**  | Immutable audit trail, compliance history, change tracking, exceptions              |
+| **MCP Server**        | AI Agent / Copilot governance operations via Model Context Protocol                |
 | **Automation**        | Repository bootstrap workflow for team-specific setup                              |
 
 ---
@@ -100,12 +103,20 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 │   ├── profiles/               # YAML governance profiles
 │   │   ├── azure-ai-landing-zone.yml
 │   │   ├── cloud-native-app.yml
-│   │   └── data-platform.yml
-│   └── engine/                 # Core engine scripts
-│       ├── create-repo.sh
-│       ├── assess-repo.sh
-│       ├── remediate-repo.sh
-│       └── format-report.sh
+│   │   ├── data-platform.yml
+│   │   ├── aks-platform.yml
+│   │   └── fabric-project.yml
+│   ├── engine/                 # Core engine scripts
+│   │   ├── create-repo.sh
+│   │   ├── assess-repo.sh
+│   │   ├── remediate-repo.sh
+│   │   ├── azure-integrate.sh  # Azure OIDC/RBAC/KV setup
+│   │   ├── audit-log.sh        # Audit & evidence functions
+│   │   └── format-report.sh
+│   └── mcp-server/             # MCP Server (Copilot Agent)
+│       ├── src/index.js
+│       ├── package.json
+│       └── README.md
 ├── src/                        # Application source code
 ├── tests/
 │   ├── unit/

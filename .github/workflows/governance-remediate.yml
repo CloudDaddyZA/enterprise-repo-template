@@ -31,6 +31,8 @@ on:
           - azure-ai-landing-zone
           - cloud-native-app
           - data-platform
+          - aks-platform
+          - fabric-project
       target_repo:
         description: "Repository to remediate (org/repo). Leave empty for this repo."
         required: false

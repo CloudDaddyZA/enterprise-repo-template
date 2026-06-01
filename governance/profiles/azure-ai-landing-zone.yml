@@ -264,3 +264,27 @@ project:
     - "In Progress"
     - "In Review"
     - "Done"
+
+# --------------------------------------------------------------------------
+# Webhooks
+# --------------------------------------------------------------------------
+webhooks:
+  - url: "${WEBHOOK_URL:-}"
+    events:
+      - push
+      - pull_request
+      - deployment_status
+      - workflow_run
+    content_type: json
+    active: true
+
+# --------------------------------------------------------------------------
+# Milestones
+# --------------------------------------------------------------------------
+milestones:
+  - title: "v1.0 - Foundation"
+    description: "Repository setup, CI/CD, and base infrastructure"
+  - title: "v1.1 - AI Integration"
+    description: "ML pipelines, model training, and inference endpoints"
+  - title: "v2.0 - Production"
+    description: "Production deployment, monitoring, and scaling"

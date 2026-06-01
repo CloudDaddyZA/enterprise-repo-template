@@ -28,6 +28,8 @@ on:
           - azure-ai-landing-zone
           - cloud-native-app
           - data-platform
+          - aks-platform
+          - fabric-project
       target_repo:
         description: "Repository to assess (org/repo). Leave empty to assess this repo."
         required: false

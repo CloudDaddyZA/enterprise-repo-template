@@ -29,6 +29,8 @@ on:
           - azure-ai-landing-zone
           - cloud-native-app
           - data-platform
+          - aks-platform
+          - fabric-project
       repo_name:
         description: "Name for the new repository"
         required: true

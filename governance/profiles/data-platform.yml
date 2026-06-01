@@ -219,3 +219,26 @@ project:
     - "In Progress"
     - "In Review"
     - "Done"
+
+# --------------------------------------------------------------------------
+# Webhooks
+# --------------------------------------------------------------------------
+webhooks:
+  - url: "${WEBHOOK_URL:-}"
+    events:
+      - push
+      - pull_request
+      - deployment_status
+    content_type: json
+    active: true
+
+# --------------------------------------------------------------------------
+# Milestones
+# --------------------------------------------------------------------------
+milestones:
+  - title: "v1.0 - Data Foundation"
+    description: "Core data models, storage, and ingestion pipelines"
+  - title: "v1.1 - Transformation Layer"
+    description: "ETL/ELT pipelines and data quality checks"
+  - title: "v2.0 - Production & Compliance"
+    description: "Production deployment with lineage tracking and audit"
