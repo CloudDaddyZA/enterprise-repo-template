@@ -1,0 +1,230 @@
+# ============================================================================
+# Governance Engine - Assess Repository (Reusable Workflow)
+# ============================================================================
+# Assesses an existing repository against a governance profile and produces
+# a compliance report. Can be triggered manually, on schedule (drift detection),
+# or called from other workflows.
+#
+# Call from another workflow:
+#   jobs:
+#     assess:
+#       uses: <org>/enterprise-repo-template/.github/workflows/governance-assess.yml@main
+#       with:
+#         profile: azure-ai-landing-zone
+#         target_repo: org/repo-to-assess
+#       secrets: inherit
+# ============================================================================
+
+name: "Governance: Assess Repository"
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Governance profile to assess against"
+        required: true
+        type: choice
+        options:
+          - azure-ai-landing-zone
+          - cloud-native-app
+          - data-platform
+      target_repo:
+        description: "Repository to assess (org/repo). Leave empty to assess this repo."
+        required: false
+        type: string
+        default: ""
+      compliance_threshold:
+        description: "Minimum compliance score (0-100). Below this fails the check."
+        required: false
+        type: number
+        default: 80
+
+  schedule:
+    # Weekly drift detection - every Monday at 06:00 UTC
+    - cron: "0 6 * * 1"
+
+  workflow_call:
+    inputs:
+      profile:
+        description: "Governance profile name"
+        required: true
+        type: string
+      target_repo:
+        description: "Target repository (org/repo)"
+        required: false
+        type: string
+        default: ""
+      compliance_threshold:
+        description: "Minimum compliance score"
+        required: false
+        type: number
+        default: 80
+    outputs:
+      score:
+        description: "Compliance score (0-100)"
+        value: ${{ jobs.assess.outputs.score }}
+      report:
+        description: "Full compliance report (JSON)"
+        value: ${{ jobs.assess.outputs.report }}
+      passed:
+        description: "Whether the assessment passed the threshold"
+        value: ${{ jobs.assess.outputs.passed }}
+
+permissions:
+  contents: read
+  issues: write  # For creating remediation issues
+
+jobs:
+  assess:
+    name: Assess Compliance
+    runs-on: ubuntu-latest
+    outputs:
+      score: ${{ steps.assess.outputs.score }}
+      report: ${{ steps.assess.outputs.report_file }}
+      passed: ${{ steps.assess.outputs.passed }}
+    steps:
+      - name: Checkout governance engine
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Determine target repository
+        id: target
+        run: |
+          TARGET="${{ inputs.target_repo }}"
+          if [ -z "$TARGET" ]; then
+            TARGET="${{ github.repository }}"
+          fi
+          echo "repo=$TARGET" >> $GITHUB_OUTPUT
+          echo "📍 Target: $TARGET"
+
+      - name: Determine profile
+        id: profile
+        run: |
+          PROFILE="${{ inputs.profile }}"
+          # For scheduled runs, use the GOVERNANCE_PROFILE variable if set
+          if [ -z "$PROFILE" ]; then
+            PROFILE="${{ vars.GOVERNANCE_PROFILE }}"
+          fi
+          if [ -z "$PROFILE" ]; then
+            PROFILE="azure-ai-landing-zone"
+          fi
+          echo "name=$PROFILE" >> $GITHUB_OUTPUT
+          echo "📋 Profile: $PROFILE"
+
+      - name: Run compliance assessment
+        id: assess
+        env:
+          GH_TOKEN: ${{ secrets.GOVERNANCE_PAT || secrets.GITHUB_TOKEN }}
+          COMPLIANCE_THRESHOLD: ${{ inputs.compliance_threshold || 80 }}
+          REPORT_FILE: compliance-report.json
+        run: |
+          chmod +x governance/engine/assess-repo.sh
+
+          # Run assessment (may exit non-zero if below threshold)
+          set +e
+          governance/engine/assess-repo.sh "${{ steps.profile.outputs.name }}" "${{ steps.target.outputs.repo }}"
+          EXIT_CODE=$?
+          set -e
+
+          # Read score from report
+          if [ -f "$REPORT_FILE" ]; then
+            SCORE=$(jq '.report.score' "$REPORT_FILE")
+            echo "score=$SCORE" >> $GITHUB_OUTPUT
+            echo "report_file=$REPORT_FILE" >> $GITHUB_OUTPUT
+
+            if [ "$EXIT_CODE" -eq 0 ]; then
+              echo "passed=true" >> $GITHUB_OUTPUT
+            else
+              echo "passed=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "score=0" >> $GITHUB_OUTPUT
+            echo "passed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Upload compliance report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: compliance-report
+          path: compliance-report.json
+          retention-days: 90
+
+      - name: Generate summary
+        if: always()
+        run: |
+          if [ ! -f compliance-report.json ]; then
+            echo "❌ No report generated" >> $GITHUB_STEP_SUMMARY
+            exit 0
+          fi
+
+          SCORE=$(jq '.report.score' compliance-report.json)
+          TOTAL=$(jq '.report.summary.total_checks' compliance-report.json)
+          PASSED=$(jq '.report.summary.passed' compliance-report.json)
+          FAILED=$(jq '.report.summary.failed' compliance-report.json)
+          WARNINGS=$(jq '.report.summary.warnings' compliance-report.json)
+          REPO=$(jq -r '.report.repository' compliance-report.json)
+          PROFILE=$(jq -r '.report.profile' compliance-report.json)
+
+          # Score badge color
+          if [ "$SCORE" -ge 90 ]; then
+            BADGE="🟢"
+          elif [ "$SCORE" -ge 70 ]; then
+            BADGE="🟡"
+          else
+            BADGE="🔴"
+          fi
+
+          echo "## $BADGE Compliance Report: ${SCORE}%" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Repository | \`$REPO\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Profile | \`$PROFILE\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Score | **${SCORE}%** |" >> $GITHUB_STEP_SUMMARY
+          echo "| Total Checks | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+          echo "| ✅ Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
+          echo "| ❌ Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
+          echo "| ⚠️ Warnings | $WARNINGS |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          # List failures
+          if [ "$FAILED" -gt 0 ]; then
+            echo "### ❌ Failed Checks" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "| Category | Check | Remediation |" >> $GITHUB_STEP_SUMMARY
+            echo "|----------|-------|-------------|" >> $GITHUB_STEP_SUMMARY
+            jq -r '.report.findings[] | select(.status == "fail") | "| \(.category) | \(.check) | \(.remediation) |"' compliance-report.json >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Create remediation issue (if below threshold)
+        if: always() && steps.assess.outputs.passed == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          SCORE="${{ steps.assess.outputs.score }}"
+          TARGET="${{ steps.target.outputs.repo }}"
+          PROFILE="${{ steps.profile.outputs.name }}"
+
+          # Only create issue if this is the target repo (avoid cross-repo issues without PAT)
+          if [ "$TARGET" = "${{ github.repository }}" ]; then
+            BODY="## 🔴 Governance Compliance Below Threshold
+
+          **Score:** ${SCORE}%
+          **Profile:** ${PROFILE}
+          **Threshold:** ${{ inputs.compliance_threshold || 80 }}%
+
+          Run the **Governance: Remediate** workflow to address failures.
+
+          See the [latest assessment run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) for details."
+
+            gh issue create \
+              --title "🔴 Governance compliance: ${SCORE}% (below threshold)" \
+              --body "$BODY" \
+              --label "security,infrastructure" \
+              2>/dev/null || true
+          fi

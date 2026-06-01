@@ -1,0 +1,173 @@
+# ============================================================================
+# Governance Profile: Cloud Native App
+# ============================================================================
+# Lightweight profile for containerized microservices. Kubernetes-ready
+# without the full Azure AI/ML stack.
+# ============================================================================
+
+name: Cloud Native App
+description: Containerized microservice with CI/CD, security scanning, and K8s deployment
+version: "1.0.0"
+
+repository:
+  visibility: private
+  default_branch: main
+  delete_branch_on_merge: true
+  allow_squash_merge: true
+  allow_merge_commit: false
+  allow_rebase_merge: false
+  allow_auto_merge: true
+  has_issues: true
+  has_projects: true
+  has_wiki: false
+  is_template: false
+  topics:
+    - cloud-native
+    - kubernetes
+    - microservice
+
+rulesets:
+  - name: main-protection
+    target: branch
+    enforcement: active
+    conditions:
+      ref_name:
+        include:
+          - "refs/heads/main"
+    rules:
+      pull_request:
+        required_approving_review_count: 1
+        dismiss_stale_reviews: true
+        require_code_owner_review: true
+        require_last_push_approval: false
+      required_status_checks:
+        strict_required_status_checks_policy: true
+        required_status_checks:
+          - context: "CI Pipeline / Lint & Format"
+          - context: "CI Pipeline / Unit Tests"
+          - context: "CI Pipeline / Build"
+      required_linear_history: true
+      deletion: true
+      non_fast_forward: true
+    bypass_actors:
+      - actor_type: OrganizationAdmin
+
+required_files:
+  - path: CODEOWNERS
+    source: templates/CODEOWNERS
+  - path: SECURITY.md
+    source: templates/SECURITY.md
+  - path: CONTRIBUTING.md
+    source: templates/CONTRIBUTING.md
+  - path: README.md
+    source: templates/README.md
+  - path: .gitignore
+    source: templates/.gitignore
+  - path: Dockerfile
+    source: templates/Dockerfile
+  - path: .github/copilot-instructions.md
+    source: templates/copilot-instructions.md
+
+workflows:
+  - name: ci.yml
+    description: Continuous Integration
+    required: true
+  - name: cd.yml
+    description: Continuous Deployment
+    required: true
+  - name: codeql.yml
+    description: CodeQL security scanning
+    required: true
+
+environments:
+  - name: dev
+    protection_rules:
+      required_reviewers: []
+      wait_timer: 0
+  - name: staging
+    protection_rules:
+      required_reviewers:
+        - count: 1
+      wait_timer: 0
+  - name: production
+    protection_rules:
+      required_reviewers:
+        - count: 2
+      wait_timer: 5
+
+security:
+  code_scanning:
+    enabled: true
+    tool: codeql
+    languages: []
+  secret_scanning:
+    enabled: true
+    push_protection: true
+  dependabot:
+    alerts: true
+    security_updates: true
+    version_updates:
+      ecosystems:
+        - package-ecosystem: github-actions
+          directory: /
+          schedule: weekly
+        - package-ecosystem: docker
+          directory: /
+          schedule: weekly
+  dependency_review:
+    enabled: true
+    fail_on_severity: high
+
+azure:
+  oidc:
+    enabled: true
+    federated_credentials:
+      - name: github-main
+        subject: "repo:${REPO}:ref:refs/heads/main"
+      - name: github-pr
+        subject: "repo:${REPO}:pull_request"
+      - name: github-env-staging
+        subject: "repo:${REPO}:environment:staging"
+      - name: github-env-production
+        subject: "repo:${REPO}:environment:production"
+  rbac:
+    assignments:
+      - role: Contributor
+        scope: resource_group
+  key_vault:
+    enabled: false
+
+labels:
+  - name: bug
+    color: "d73a4a"
+    description: Something isn't working
+  - name: enhancement
+    color: "a2eeef"
+    description: New feature or request
+  - name: documentation
+    color: "0075ca"
+    description: Improvements or additions to documentation
+  - name: security
+    color: "e4e669"
+    description: Security-related issue
+  - name: dependencies
+    color: "0366d6"
+    description: Dependency updates
+  - name: priority/high
+    color: "b60205"
+    description: High priority
+  - name: priority/medium
+    color: "fbca04"
+    description: Medium priority
+  - name: priority/low
+    color: "0e8a16"
+    description: Low priority
+
+teams:
+  - slug: "${TEAM_SLUG}-maintainers"
+    permission: maintain
+  - slug: "${TEAM_SLUG}-developers"
+    permission: push
+
+project:
+  enabled: false

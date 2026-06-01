@@ -1,0 +1,156 @@
+# ============================================================================
+# Governance Engine - Remediate Repository (Reusable Workflow)
+# ============================================================================
+# Remediates governance gaps found by the assess workflow. Supports three
+# remediation modes:
+#   - safe:      Creates a PR with proposed changes (default)
+#   - semi-auto: Applies API changes, creates PR for file changes
+#   - auto:      Applies everything directly
+#
+# Call from another workflow:
+#   jobs:
+#     remediate:
+#       uses: <org>/enterprise-repo-template/.github/workflows/governance-remediate.yml@main
+#       with:
+#         profile: azure-ai-landing-zone
+#         target_repo: org/repo-to-fix
+#         mode: semi-auto
+#       secrets: inherit
+# ============================================================================
+
+name: "Governance: Remediate Repository"
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Governance profile to enforce"
+        required: true
+        type: choice
+        options:
+          - azure-ai-landing-zone
+          - cloud-native-app
+          - data-platform
+      target_repo:
+        description: "Repository to remediate (org/repo). Leave empty for this repo."
+        required: false
+        type: string
+        default: ""
+      mode:
+        description: "Remediation mode"
+        required: true
+        type: choice
+        options:
+          - safe
+          - semi-auto
+          - auto
+
+  workflow_call:
+    inputs:
+      profile:
+        description: "Governance profile name"
+        required: true
+        type: string
+      target_repo:
+        description: "Target repository (org/repo)"
+        required: false
+        type: string
+        default: ""
+      mode:
+        description: "Remediation mode (safe, semi-auto, auto)"
+        required: false
+        type: string
+        default: "safe"
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+
+jobs:
+  remediate:
+    name: Remediate Governance Gaps
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout governance engine
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Determine target
+        id: target
+        run: |
+          TARGET="${{ inputs.target_repo }}"
+          if [ -z "$TARGET" ]; then
+            TARGET="${{ github.repository }}"
+          fi
+          echo "repo=$TARGET" >> $GITHUB_OUTPUT
+          echo "📍 Target: $TARGET"
+
+      - name: Run remediation
+        id: remediate
+        env:
+          GH_TOKEN: ${{ secrets.GOVERNANCE_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          chmod +x governance/engine/remediate-repo.sh
+
+          MODE="${{ inputs.mode || 'safe' }}"
+
+          governance/engine/remediate-repo.sh \
+            "${{ inputs.profile }}" \
+            "${{ steps.target.outputs.repo }}" \
+            "$MODE"
+
+      - name: Run post-remediation assessment
+        if: inputs.mode != 'safe'
+        env:
+          GH_TOKEN: ${{ secrets.GOVERNANCE_PAT || secrets.GITHUB_TOKEN }}
+          REPORT_FILE: post-remediation-report.json
+        run: |
+          chmod +x governance/engine/assess-repo.sh
+          set +e
+          governance/engine/assess-repo.sh "${{ inputs.profile }}" "${{ steps.target.outputs.repo }}"
+          set -e
+
+      - name: Upload post-remediation report
+        if: always() && inputs.mode != 'safe'
+        uses: actions/upload-artifact@v4
+        with:
+          name: post-remediation-report
+          path: post-remediation-report.json
+          retention-days: 90
+          if-no-files-found: ignore
+
+      - name: Generate summary
+        if: always()
+        run: |
+          MODE="${{ inputs.mode || 'safe' }}"
+          TARGET="${{ steps.target.outputs.repo }}"
+          PROFILE="${{ inputs.profile }}"
+
+          echo "## 🔧 Remediation Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Repository | \`$TARGET\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Profile | \`$PROFILE\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Mode | \`$MODE\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ "$MODE" = "safe" ]; then
+            echo "### ℹ️ Safe Mode" >> $GITHUB_STEP_SUMMARY
+            echo "No changes were applied. Review the output above to see what would change." >> $GITHUB_STEP_SUMMARY
+            echo "Re-run with **semi-auto** or **auto** mode to apply changes." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ✅ Changes Applied" >> $GITHUB_STEP_SUMMARY
+            echo "Settings have been remediated according to the governance profile." >> $GITHUB_STEP_SUMMARY
+
+            if [ -f post-remediation-report.json ]; then
+              SCORE=$(jq '.report.score' post-remediation-report.json)
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "**Post-remediation score: ${SCORE}%**" >> $GITHUB_STEP_SUMMARY
+            fi
+          fi

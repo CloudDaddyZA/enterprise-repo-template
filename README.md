@@ -39,6 +39,7 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 | **Labels** | Automated label sync from configuration file |
 | **ADRs** | Architecture Decision Records with template |
 | **AI Coding** | GitHub Copilot instructions and guardrails |
+| **Governance Engine** | Automated repo creation, compliance assessment, and drift remediation |
 | **Automation** | Repository bootstrap workflow for team-specific setup |
 
 ---
@@ -64,6 +65,9 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 │       ├── codeql.yml          # Security scanning (manual trigger)
 │       ├── iac-guardrails.yml  # Terraform + Bicep validation
 │       ├── azure-oidc-setup.yml # Azure federated credential setup
+│       ├── governance-create.yml  # Create governed repository
+│       ├── governance-assess.yml  # Assess compliance
+│       ├── governance-remediate.yml # Remediate gaps
 │       ├── release.yml         # Semantic versioning releases
 │       ├── label-sync.yml      # Label automation
 │       ├── stale.yml           # Stale issue/PR cleanup
@@ -90,6 +94,17 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 │   └── bicep/                  # Azure Bicep IaC
 │       ├── main.bicep
 │       └── bicepconfig.json    # Bicep linting rules
+├── governance/                   # Governance Engine
+│   ├── README.md               # Engine documentation
+│   ├── profiles/               # YAML governance profiles
+│   │   ├── azure-ai-landing-zone.yml
+│   │   ├── cloud-native-app.yml
+│   │   └── data-platform.yml
+│   └── engine/                 # Core engine scripts
+│       ├── create-repo.sh
+│       ├── assess-repo.sh
+│       ├── remediate-repo.sh
+│       └── format-report.sh
 ├── src/                        # Application source code
 ├── tests/
 │   ├── unit/

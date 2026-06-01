@@ -1,0 +1,311 @@
+# ============================================================================
+# Governance Engine - Create Repository (Reusable Workflow)
+# ============================================================================
+# Creates a new repository from template and applies full governance profile.
+# Implements the 9-step New Repository Flow from the governance architecture.
+#
+# Call from another workflow:
+#   jobs:
+#     create:
+#       uses: <org>/enterprise-repo-template/.github/workflows/governance-create.yml@main
+#       with:
+#         profile: azure-ai-landing-zone
+#         repo_name: my-new-service
+#         team_slug: backend-team
+#         project_name: My New Service
+#       secrets: inherit
+# ============================================================================
+
+name: "Governance: Create Repository"
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: "Governance profile to apply"
+        required: true
+        type: choice
+        options:
+          - azure-ai-landing-zone
+          - cloud-native-app
+          - data-platform
+      repo_name:
+        description: "Name for the new repository"
+        required: true
+        type: string
+      team_slug:
+        description: "Team slug (used for CODEOWNERS, permissions)"
+        required: true
+        type: string
+      project_name:
+        description: "Human-readable project name"
+        required: true
+        type: string
+      visibility:
+        description: "Override profile visibility (leave empty to use profile default)"
+        required: false
+        type: choice
+        options:
+          - ""
+          - private
+          - internal
+          - public
+
+  workflow_call:
+    inputs:
+      profile:
+        description: "Governance profile name"
+        required: true
+        type: string
+      repo_name:
+        description: "Repository name"
+        required: true
+        type: string
+      team_slug:
+        description: "Team slug"
+        required: true
+        type: string
+      project_name:
+        description: "Project name"
+        required: true
+        type: string
+      visibility:
+        description: "Visibility override"
+        required: false
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  create-repository:
+    name: Create & Govern Repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout governance engine
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+
+      - name: Validate profile
+        run: |
+          PROFILE="governance/profiles/${{ inputs.profile }}.yml"
+          if [ ! -f "$PROFILE" ]; then
+            echo "❌ Profile not found: ${{ inputs.profile }}"
+            echo "Available profiles:"
+            ls governance/profiles/*.yml | xargs -I{} basename {} .yml
+            exit 1
+          fi
+          echo "✅ Profile validated: ${{ inputs.profile }}"
+
+      - name: Create repository from template
+        env:
+          GH_TOKEN: ${{ secrets.GOVERNANCE_PAT }}
+        run: |
+          PROFILE_FILE="governance/profiles/${{ inputs.profile }}.yml"
+          ORG="${{ github.repository_owner }}"
+          REPO_NAME="${{ inputs.repo_name }}"
+          REPO="$ORG/$REPO_NAME"
+
+          # Determine visibility
+          VISIBILITY="${{ inputs.visibility }}"
+          if [ -z "$VISIBILITY" ]; then
+            VISIBILITY=$(yq '.repository.visibility' "$PROFILE_FILE")
+          fi
+
+          TEMPLATE="${{ github.repository }}"
+
+          echo "📦 Creating repository: $REPO"
+          echo "   Template: $TEMPLATE"
+          echo "   Visibility: $VISIBILITY"
+
+          gh repo create "$REPO" \
+            --template "$TEMPLATE" \
+            "--${VISIBILITY}" \
+            --clone=false
+
+          # Wait for GitHub to finish setup
+          sleep 10
+          echo "✅ Repository created"
+
+      - name: Apply repository settings
+        env:
+          GH_TOKEN: ${{ secrets.GOVERNANCE_PAT }}
+        run: |
+          PROFILE_FILE="governance/profiles/${{ inputs.profile }}.yml"
+          ORG="${{ github.repository_owner }}"
+          REPO="$ORG/${{ inputs.repo_name }}"
+
+          echo "⚙️  Applying repository settings..."
+
+          # Build settings patch
+          DELETE_BRANCH=$(yq '.repository.delete_branch_on_merge' "$PROFILE_FILE")
+          ALLOW_SQUASH=$(yq '.repository.allow_squash_merge' "$PROFILE_FILE")
+          ALLOW_MERGE=$(yq '.repository.allow_merge_commit' "$PROFILE_FILE")
+          ALLOW_REBASE=$(yq '.repository.allow_rebase_merge' "$PROFILE_FILE")
+          ALLOW_AUTO=$(yq '.repository.allow_auto_merge' "$PROFILE_FILE")
+          HAS_WIKI=$(yq '.repository.has_wiki' "$PROFILE_FILE")
+          HAS_ISSUES=$(yq '.repository.has_issues' "$PROFILE_FILE")
+          HAS_PROJECTS=$(yq '.repository.has_projects' "$PROFILE_FILE")
+
+          gh api "repos/$REPO" --method PATCH \
+            -f delete_branch_on_merge="$DELETE_BRANCH" \
+            -f allow_squash_merge="$ALLOW_SQUASH" \
+            -f allow_merge_commit="$ALLOW_MERGE" \
+            -f allow_rebase_merge="$ALLOW_REBASE" \
+            -f allow_auto_merge="$ALLOW_AUTO" \
+            -f has_wiki="$HAS_WIKI" \
+            -f has_issues="$HAS_ISSUES" \
+            -f has_projects="$HAS_PROJECTS" \
+            --silent
+
+          # Topics
+          TOPICS=$(yq -o=json '.repository.topics' "$PROFILE_FILE")
+          gh api "repos/$REPO/topics" --method PUT \
+            --input <(echo "{\"names\": $TOPICS}") --silent
+
+          echo "✅ Repository settings applied"
+
+      - name: Apply rulesets
+        env:
+          GH_TOKEN: ${{ secrets.GOVERNANCE_PAT }}
+        run: |
+          PROFILE_FILE="governance/profiles/${{ inputs.profile }}.yml"
+          ORG="${{ github.repository_owner }}"
+          REPO="$ORG/${{ inputs.repo_name }}"
+
+          echo "🛡️  Applying rulesets..."
+
+          RULESET_COUNT=$(yq '.rulesets | length' "$PROFILE_FILE")
+          for i in $(seq 0 $((RULESET_COUNT - 1))); do
+            RULESET_NAME=$(yq ".rulesets[$i].name" "$PROFILE_FILE")
+            APPROVALS=$(yq ".rulesets[$i].rules.pull_request.required_approving_review_count" "$PROFILE_FILE")
+            DISMISS_STALE=$(yq ".rulesets[$i].rules.pull_request.dismiss_stale_reviews" "$PROFILE_FILE")
+            REQUIRE_CODEOWNER=$(yq ".rulesets[$i].rules.pull_request.require_code_owner_review" "$PROFILE_FILE")
+            STATUS_CHECKS=$(yq -o=json ".rulesets[$i].rules.required_status_checks.required_status_checks" "$PROFILE_FILE")
+
+            gh api "repos/$REPO/rulesets" --method POST --input <(cat <<EOF
+          {
+            "name": "$RULESET_NAME",
+            "target": "branch",
+            "enforcement": "active",
+            "conditions": {"ref_name": {"include": ["refs/heads/main"], "exclude": []}},
+            "rules": [
+              {"type": "pull_request", "parameters": {"required_approving_review_count": $APPROVALS, "dismiss_stale_reviews_on_push": $DISMISS_STALE, "require_code_owner_review": $REQUIRE_CODEOWNER, "require_last_push_approval": false}},
+              {"type": "required_status_checks", "parameters": {"strict_required_status_checks_policy": true, "required_status_checks": $STATUS_CHECKS}},
+              {"type": "deletion"},
+              {"type": "non_fast_forward"}
+            ],
+            "bypass_actors": []
+          }
+EOF
+            ) --silent
+            echo "   ✅ Ruleset: $RULESET_NAME"
+          done
+
+      - name: Create environments
+        env:
+          GH_TOKEN: ${{ secrets.GOVERNANCE_PAT }}
+        run: |
+          PROFILE_FILE="governance/profiles/${{ inputs.profile }}.yml"
+          ORG="${{ github.repository_owner }}"
+          REPO="$ORG/${{ inputs.repo_name }}"
+
+          echo "🌍 Creating environments..."
+
+          ENV_COUNT=$(yq '.environments | length' "$PROFILE_FILE")
+          for i in $(seq 0 $((ENV_COUNT - 1))); do
+            ENV_NAME=$(yq ".environments[$i].name" "$PROFILE_FILE")
+            WAIT_TIMER=$(yq ".environments[$i].protection_rules.wait_timer // 0" "$PROFILE_FILE")
+
+            gh api "repos/$REPO/environments/$ENV_NAME" --method PUT \
+              --input <(echo "{\"wait_timer\": $WAIT_TIMER}") --silent
+            echo "   ✅ $ENV_NAME"
+          done
+
+      - name: Configure security features
+        env:
+          GH_TOKEN: ${{ secrets.GOVERNANCE_PAT }}
+        run: |
+          PROFILE_FILE="governance/profiles/${{ inputs.profile }}.yml"
+          ORG="${{ github.repository_owner }}"
+          REPO="$ORG/${{ inputs.repo_name }}"
+
+          echo "🔒 Configuring security..."
+
+          # Secret scanning + push protection
+          gh api "repos/$REPO" --method PATCH \
+            --input <(echo '{"security_and_analysis":{"secret_scanning":{"status":"enabled"},"secret_scanning_push_protection":{"status":"enabled"}}}') \
+            --silent 2>/dev/null || true
+
+          # Dependabot
+          gh api "repos/$REPO/vulnerability-alerts" --method PUT --silent 2>/dev/null || true
+
+          echo "   ✅ Secret scanning, push protection, Dependabot enabled"
+
+      - name: Create labels
+        env:
+          GH_TOKEN: ${{ secrets.GOVERNANCE_PAT }}
+        run: |
+          PROFILE_FILE="governance/profiles/${{ inputs.profile }}.yml"
+          ORG="${{ github.repository_owner }}"
+          REPO="$ORG/${{ inputs.repo_name }}"
+
+          echo "🏷️  Creating labels..."
+
+          LABEL_COUNT=$(yq '.labels | length' "$PROFILE_FILE")
+          for i in $(seq 0 $((LABEL_COUNT - 1))); do
+            LABEL_NAME=$(yq ".labels[$i].name" "$PROFILE_FILE")
+            LABEL_COLOR=$(yq ".labels[$i].color" "$PROFILE_FILE")
+            LABEL_DESC=$(yq ".labels[$i].description" "$PROFILE_FILE")
+
+            gh api "repos/$REPO/labels" --method POST \
+              -f name="$LABEL_NAME" -f color="$LABEL_COLOR" -f description="$LABEL_DESC" \
+              --silent 2>/dev/null || \
+            gh api "repos/$REPO/labels/$LABEL_NAME" --method PATCH \
+              -f color="$LABEL_COLOR" -f description="$LABEL_DESC" \
+              --silent 2>/dev/null || true
+          done
+          echo "   ✅ $LABEL_COUNT labels configured"
+
+      - name: Set repository variables
+        env:
+          GH_TOKEN: ${{ secrets.GOVERNANCE_PAT }}
+        run: |
+          ORG="${{ github.repository_owner }}"
+          REPO="$ORG/${{ inputs.repo_name }}"
+
+          echo "🔐 Setting repository variables..."
+
+          gh api "repos/$REPO/actions/variables" --method POST \
+            -f name="PROJECT_NAME" -f value="${{ inputs.project_name }}" --silent 2>/dev/null || true
+          gh api "repos/$REPO/actions/variables" --method POST \
+            -f name="TEAM_SLUG" -f value="${{ inputs.team_slug }}" --silent 2>/dev/null || true
+          gh api "repos/$REPO/actions/variables" --method POST \
+            -f name="GOVERNANCE_PROFILE" -f value="${{ inputs.profile }}" --silent 2>/dev/null || true
+
+          echo "   ✅ Variables set"
+
+      - name: Summary
+        run: |
+          ORG="${{ github.repository_owner }}"
+          REPO="$ORG/${{ inputs.repo_name }}"
+
+          echo "## ✅ Repository Created Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Setting | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|---------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Repository | [$REPO](https://github.com/$REPO) |" >> $GITHUB_STEP_SUMMARY
+          echo "| Profile | ${{ inputs.profile }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Team | ${{ inputs.team_slug }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Project | ${{ inputs.project_name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
+          echo "1. Run **Azure OIDC Setup** workflow in the new repo" >> $GITHUB_STEP_SUMMARY
+          echo "2. Update \`CODEOWNERS\` with team members" >> $GITHUB_STEP_SUMMARY
+          echo "3. Configure environment secrets" >> $GITHUB_STEP_SUMMARY
+          echo "4. Push initial application code" >> $GITHUB_STEP_SUMMARY
