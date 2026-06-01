@@ -113,10 +113,14 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 │   │   ├── azure-integrate.sh  # Azure OIDC/RBAC/KV setup
 │   │   ├── audit-log.sh        # Audit & evidence functions
 │   │   └── format-report.sh
-│   └── mcp-server/             # MCP Server (Copilot Agent)
-│       ├── src/index.js
+│   ├── mcp-server/             # MCP Server (Copilot Agent)
+│   │   ├── src/index.js
+│   │   ├── package.json
+│   │   └── README.md
+│   └── copilot-participant/    # VS Code Chat Participant (@governance)
+│       ├── src/extension.ts
 │       ├── package.json
-│       └── README.md
+│       └── tsconfig.json
 ├── src/                        # Application source code
 ├── tests/
 │   ├── unit/

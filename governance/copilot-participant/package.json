@@ -1,0 +1,62 @@
+{
+  "name": "governance-copilot-participant",
+  "displayName": "Governance Engine - Copilot Chat Participant",
+  "description": "GitHub Copilot Chat participant for enterprise repository governance operations",
+  "version": "1.0.0",
+  "publisher": "enterprise-governance",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Chat"
+  ],
+  "activationEvents": [],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "chatParticipants": [
+      {
+        "id": "governance-engine",
+        "fullName": "Governance Engine",
+        "name": "governance",
+        "description": "Enterprise repository governance — create, assess, and remediate repositories against golden standards",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "create",
+            "description": "Create a new governed repository from a profile"
+          },
+          {
+            "name": "assess",
+            "description": "Assess an existing repository against a governance profile"
+          },
+          {
+            "name": "remediate",
+            "description": "Remediate governance gaps in a repository"
+          },
+          {
+            "name": "profiles",
+            "description": "List available governance profiles"
+          },
+          {
+            "name": "report",
+            "description": "Generate a compliance report"
+          },
+          {
+            "name": "azure",
+            "description": "Set up Azure OIDC, RBAC, and Key Vault integration"
+          }
+        ]
+      }
+    ]
+  },
+  "scripts": {
+    "build": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.93.0",
+    "typescript": "^5.5.0"
+  }
+}
