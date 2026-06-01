@@ -87,6 +87,8 @@ azure: # OIDC, RBAC, Key Vault
 labels: # Issue/PR labels
 teams: # Team permissions
 project: # Project board configuration
+webhooks: # Webhook endpoints and events
+milestones: # Default milestones for new repos
 ```
 
 ## Usage
@@ -208,26 +210,26 @@ The `azure-integrate.sh` script provisions Azure resources for governed reposito
 ./governance/engine/azure-integrate.sh azure-ai-landing-zone my-org/my-repo <subscription-id> <resource-group>
 ```
 
-| Component | Action |
-|-----------|--------|
-| Entra ID App Registration | Creates app + service principal |
-| OIDC Federated Credentials | Configures GitHub → Azure trust per profile |
-| RBAC Role Assignments | Assigns roles defined in profile |
-| Key Vault | Creates vault with RBAC authorization (if enabled) |
-| Resource Group | Auto-creates with governance tags (if not provided) |
-| GitHub Variables | Sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` |
+| Component                  | Action                                                             |
+| -------------------------- | ------------------------------------------------------------------ |
+| Entra ID App Registration  | Creates app + service principal                                    |
+| OIDC Federated Credentials | Configures GitHub → Azure trust per profile                        |
+| RBAC Role Assignments      | Assigns roles defined in profile                                   |
+| Key Vault                  | Creates vault with RBAC authorization (if enabled)                 |
+| Resource Group             | Auto-creates with governance tags (if not provided)                |
+| GitHub Variables           | Sets `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` |
 
 ## Audit & Evidence Store
 
 All governance operations produce audit trails:
 
-| Artifact | Location | Purpose |
-|----------|----------|---------|
-| Audit trail | `audit-trail.jsonl` | Every action logged with timestamp, actor, details |
-| Compliance history | `compliance-history.jsonl` | Score over time per repository |
-| Change history | `change-history.jsonl` | Every setting change with old/new values |
-| Exceptions | `exceptions.jsonl` | Documented exceptions with expiry dates |
-| Evidence | `evidence/` directory | Compliance report snapshots |
+| Artifact           | Location                   | Purpose                                            |
+| ------------------ | -------------------------- | -------------------------------------------------- |
+| Audit trail        | `audit-trail.jsonl`        | Every action logged with timestamp, actor, details |
+| Compliance history | `compliance-history.jsonl` | Score over time per repository                     |
+| Change history     | `change-history.jsonl`     | Every setting change with old/new values           |
+| Exceptions         | `exceptions.jsonl`         | Documented exceptions with expiry dates            |
+| Evidence           | `evidence/` directory      | Compliance report snapshots                        |
 
 Source the module in your scripts:
 
@@ -253,26 +255,26 @@ See [mcp-server/README.md](mcp-server/README.md) for VS Code integration and ava
 
 ## Capability Matrix
 
-| Capability | Org Level (Admin) | Repo Level (Admin) | Automation (Agent) | Notes |
-|---|---|---|---|---|
-| Org Rulesets | ✅ | ❌ | ⚠️ (if allowed) | Requires org admin |
-| Repo Rulesets / Branch Protection | ❌ | ✅ | ✅ | Can be automated via API / CLI |
-| Environments | ❌ | ✅ | ✅ | Approvals per env |
-| Secrets / Variables | ❌ | ✅ | ✅ | Repo or Org level |
-| Teams & Permissions | ✅ | ❌ | ✅ | Depends on rights |
-| Workflows / Files | ❌ | ✅ | ✅ | Via PR or direct |
-| Security Scanning | ✅ | ✅ | ✅ | If enabled by org |
-| Projects / Labels / Milestones | ❌ | ✅ | ✅ | Repo level |
-| Azure OIDC / App Reg | ❌ | ❌ | ✅ | Requires Azure access |
+| Capability                        | Org Level (Admin) | Repo Level (Admin) | Automation (Agent) | Notes                          |
+| --------------------------------- | ----------------- | ------------------ | ------------------ | ------------------------------ |
+| Org Rulesets                      | ✅                | ❌                 | ⚠️ (if allowed)    | Requires org admin             |
+| Repo Rulesets / Branch Protection | ❌                | ✅                 | ✅                 | Can be automated via API / CLI |
+| Environments                      | ❌                | ✅                 | ✅                 | Approvals per env              |
+| Secrets / Variables               | ❌                | ✅                 | ✅                 | Repo or Org level              |
+| Teams & Permissions               | ✅                | ❌                 | ✅                 | Depends on rights              |
+| Workflows / Files                 | ❌                | ✅                 | ✅                 | Via PR or direct               |
+| Security Scanning                 | ✅                | ✅                 | ✅                 | If enabled by org              |
+| Projects / Labels / Milestones    | ❌                | ✅                 | ✅                 | Repo level                     |
+| Azure OIDC / App Reg              | ❌                | ❌                 | ✅                 | Requires Azure access          |
 
 ## Integration & Automation Options
 
-| Method | Best For | Trigger Types |
-|--------|----------|---------------|
-| GitHub Actions Workflow | Standard CI/CD, scheduled drift detection | Manual, schedule, webhook |
-| MCP Server (Copilot Agent) | Conversational governance, ad-hoc operations | User/AI prompt |
-| CLI Scripts | Local development, automation pipelines | Manual, scripts |
-| GitHub App | Scale across many orgs (future) | Repository created, policy change |
+| Method                     | Best For                                     | Trigger Types                     |
+| -------------------------- | -------------------------------------------- | --------------------------------- |
+| GitHub Actions Workflow    | Standard CI/CD, scheduled drift detection    | Manual, schedule, webhook         |
+| MCP Server (Copilot Agent) | Conversational governance, ad-hoc operations | User/AI prompt                    |
+| CLI Scripts                | Local development, automation pipelines      | Manual, scripts                   |
+| GitHub App                 | Scale across many orgs (future)              | Repository created, policy change |
 
 ### Event Triggers
 

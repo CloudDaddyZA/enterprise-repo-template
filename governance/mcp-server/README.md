@@ -21,16 +21,16 @@ Model Context Protocol server that enables GitHub Copilot and AI agents to manag
 
 ## Available Tools
 
-| Tool | Description |
-|------|-------------|
-| `list_profiles` | List all governance profiles with descriptions |
-| `get_profile` | Get full YAML content of a specific profile |
-| `create_repository` | Create a new governed repository from a profile |
-| `assess_repository` | Assess compliance against a governance profile |
-| `remediate_repository` | Fix governance gaps (safe/semi-auto/auto modes) |
-| `azure_integrate` | Set up Azure OIDC, RBAC, and Key Vault |
-| `generate_report` | Generate compliance report (markdown/JSON/badge) |
-| `compare_profiles` | Compare two profiles side-by-side |
+| Tool                   | Description                                      |
+| ---------------------- | ------------------------------------------------ |
+| `list_profiles`        | List all governance profiles with descriptions   |
+| `get_profile`          | Get full YAML content of a specific profile      |
+| `create_repository`    | Create a new governed repository from a profile  |
+| `assess_repository`    | Assess compliance against a governance profile   |
+| `remediate_repository` | Fix governance gaps (safe/semi-auto/auto modes)  |
+| `azure_integrate`      | Set up Azure OIDC, RBAC, and Key Vault           |
+| `generate_report`      | Generate compliance report (markdown/JSON/badge) |
+| `compare_profiles`     | Compare two profiles side-by-side                |
 
 ## Example Prompts
 

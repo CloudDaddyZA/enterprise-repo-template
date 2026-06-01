@@ -41,7 +41,7 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 | **AI Coding**         | GitHub Copilot instructions and guardrails                                         |
 | **Governance Engine** | 5 profiles, auto-create, compliance assessment, drift remediation                  |
 | **Azure Integration** | OIDC, RBAC, Key Vault, federated credentials, resource groups                      |
-| **Audit & Evidence**  | Immutable audit trail, compliance history, change tracking, exceptions              |
+| **Audit & Evidence**  | Immutable audit trail, compliance history, change tracking, exceptions             |
 | **MCP Server**        | AI Agent / Copilot governance operations via Model Context Protocol                |
 | **Automation**        | Repository bootstrap workflow for team-specific setup                              |
 
@@ -329,6 +329,8 @@ gh workflow run governance-remediate.yml \
 | `azure-ai-landing-zone` | Full Azure AI with OIDC, RBAC, Key Vault, 4 environments  |
 | `cloud-native-app`      | Containerized microservice, K8s-ready, lighter governance |
 | `data-platform`         | Strict compliance, signed commits, data classification    |
+| `aks-platform`          | AKS platform engineering, GitOps, Flux, DR environment    |
+| `fabric-project`        | Microsoft Fabric analytics, workspace sync, data gov      |
 
 See [governance/README.md](governance/README.md) for full documentation.
 
