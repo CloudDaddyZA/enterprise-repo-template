@@ -10,7 +10,9 @@ infra/
 │   ├── modules/        # Reusable Terraform modules
 │   ├── environments/   # Environment-specific configurations
 │   ├── .tflint.hcl     # TFLint rules (azurerm, naming, docs)
-│   └── main.tf         # Root module
+│   ├── main.tf         # Root module (providers, locals, resources)
+│   ├── variables.tf    # Input variable definitions
+│   └── outputs.tf      # Output definitions
 ├── bicep/              # Azure Bicep templates
 │   ├── modules/        # Reusable Bicep modules
 │   ├── bicepconfig.json # Bicep linting configuration
@@ -41,11 +43,11 @@ az deployment group create \
 
 ## Environments
 
-| Environment | Purpose | Approval Required |
-|-------------|---------|-------------------|
-| dev | Development/testing | No |
-| staging | Pre-production validation | Yes (1 reviewer) |
-| production | Live workloads | Yes (2 reviewers) |
+| Environment | Purpose                   | Approval Required |
+| ----------- | ------------------------- | ----------------- |
+| dev         | Development/testing       | No                |
+| staging     | Pre-production validation | Yes (1 reviewer)  |
+| production  | Live workloads            | Yes (2 reviewers) |
 
 ## Conventions
 
@@ -58,13 +60,13 @@ az deployment group create \
 
 The `.github/workflows/iac-guardrails.yml` workflow automatically validates infrastructure changes:
 
-| Check | Tool | Scope |
-|-------|------|-------|
-| Formatting | `terraform fmt` | `infra/terraform/**` |
-| Validation | `terraform validate` | `infra/terraform/**` |
-| Linting | TFLint (`.tflint.hcl`) | `infra/terraform/**` |
-| Bicep build | `az bicep build` | `infra/bicep/**` |
-| Bicep lint | `bicepconfig.json` rules | `infra/bicep/**` |
-| Security | Checkov | All IaC files |
+| Check       | Tool                     | Scope                |
+| ----------- | ------------------------ | -------------------- |
+| Formatting  | `terraform fmt`          | `infra/terraform/**` |
+| Validation  | `terraform validate`     | `infra/terraform/**` |
+| Linting     | TFLint (`.tflint.hcl`)   | `infra/terraform/**` |
+| Bicep build | `az bicep build`         | `infra/bicep/**`     |
+| Bicep lint  | `bicepconfig.json` rules | `infra/bicep/**`     |
+| Security    | Checkov                  | All IaC files        |
 
 The workflow triggers on PRs that modify files under `infra/`.

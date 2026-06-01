@@ -12,35 +12,35 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 
 ![Enterprise Governance Architecture](docs/images/enterprise-governance-architecture.png)
 
-| Layer | Component | Purpose |
-|-------|-----------|---------|
-| 1 | **GitHub Organization** | Foundation for identity, security, and governance across all repositories |
-| 2 | **Org Rulesets** | Immutable governance enforcement (branch protection, status checks, security rules) |
-| 3 | **Golden Template Repository** | ← *This repo* — the blueprint with standards, automation, and defaults |
-| 4 | **Bootstrap Automation** | Repo factory that provisions teams, environments, secrets, and integrations |
-| 5 | **Governed Project Repositories** | The end state — secure, consistent, production-ready repositories |
+| Layer | Component                         | Purpose                                                                             |
+| ----- | --------------------------------- | ----------------------------------------------------------------------------------- |
+| 1     | **GitHub Organization**           | Foundation for identity, security, and governance across all repositories           |
+| 2     | **Org Rulesets**                  | Immutable governance enforcement (branch protection, status checks, security rules) |
+| 3     | **Golden Template Repository**    | ← _This repo_ — the blueprint with standards, automation, and defaults              |
+| 4     | **Bootstrap Automation**          | Repo factory that provisions teams, environments, secrets, and integrations         |
+| 5     | **Governed Project Repositories** | The end state — secure, consistent, production-ready repositories                   |
 
 ---
 
 ## What's Included
 
-| Category | Contents |
-|----------|----------|
-| **CI/CD** | GitHub Actions for build, test, lint, deploy (staging + production with approvals) |
-| **Security** | CodeQL scanning, Dependabot, dependency review, secret scanning, TruffleHog |
-| **IaC Guardrails** | Terraform fmt/validate/tflint + Bicep build/lint + Checkov security scanning |
-| **Azure OIDC** | Automated federated credential setup for passwordless GitHub → Azure auth |
-| **Branching** | Trunk-based strategy with `main`, `release/*`, `feature/*`, `hotfix/*` |
-| **Templates** | PR template, bug report, feature request issue forms |
-| **Governance** | CODEOWNERS, SECURITY.md, CONTRIBUTING.md, conventional commits |
-| **Infrastructure** | Terraform + Bicep scaffolding with multi-environment support |
-| **Dev Environment** | Dev Container / Codespaces configuration |
-| **Releases** | Semantic versioning workflow with automated changelogs |
-| **Labels** | Automated label sync from configuration file |
-| **ADRs** | Architecture Decision Records with template |
-| **AI Coding** | GitHub Copilot instructions and guardrails |
-| **Governance Engine** | Automated repo creation, compliance assessment, and drift remediation |
-| **Automation** | Repository bootstrap workflow for team-specific setup |
+| Category              | Contents                                                                           |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| **CI/CD**             | GitHub Actions for build, test, lint, deploy (staging + production with approvals) |
+| **Security**          | CodeQL scanning, Dependabot, dependency review, secret scanning, TruffleHog        |
+| **IaC Guardrails**    | Terraform fmt/validate/tflint + Bicep build/lint + Checkov security scanning       |
+| **Azure OIDC**        | Automated federated credential setup for passwordless GitHub → Azure auth          |
+| **Branching**         | Trunk-based strategy with `main`, `release/*`, `feature/*`, `hotfix/*`             |
+| **Templates**         | PR template, bug report, feature request issue forms                               |
+| **Governance**        | CODEOWNERS, SECURITY.md, CONTRIBUTING.md, conventional commits                     |
+| **Infrastructure**    | Terraform + Bicep scaffolding with multi-environment support                       |
+| **Dev Environment**   | Dev Container / Codespaces configuration                                           |
+| **Releases**          | Semantic versioning workflow with automated changelogs                             |
+| **Labels**            | Automated label sync from configuration file                                       |
+| **ADRs**              | Architecture Decision Records with template                                        |
+| **AI Coding**         | GitHub Copilot instructions and guardrails                                         |
+| **Governance Engine** | Automated repo creation, compliance assessment, and drift remediation              |
+| **Automation**        | Repository bootstrap workflow for team-specific setup                              |
 
 ---
 
@@ -85,6 +85,7 @@ This template implements **Layer 3** of a 5-layer enterprise governance model:
 │   ├── README.md
 │   ├── terraform/              # Terraform IaC
 │   │   ├── main.tf
+│   │   ├── variables.tf        # Input variable definitions
 │   │   ├── outputs.tf
 │   │   ├── .tflint.hcl         # TFLint configuration
 │   │   └── environments/
@@ -168,22 +169,22 @@ Or configure manually in **Settings** → **Branches** → **Branch protection r
 
 Set up deployment environments in **Settings** → **Environments**:
 
-| Environment | Protection Rules |
-|-------------|-----------------|
-| `staging` | Required reviewers (1) |
+| Environment  | Protection Rules                           |
+| ------------ | ------------------------------------------ |
+| `staging`    | Required reviewers (1)                     |
 | `production` | Required reviewers (2), wait timer (5 min) |
 
 ### 6. Add Secrets and Variables
 
 Configure these in **Settings** → **Secrets and variables** → **Actions**:
 
-| Secret/Variable | Purpose |
-|----------------|---------|
-| `AZURE_CLIENT_ID` | Azure OIDC authentication |
-| `AZURE_TENANT_ID` | Azure tenant |
-| `AZURE_SUBSCRIPTION_ID` | Azure subscription |
-| `STAGING_URL` | Staging environment URL (variable) |
-| `PRODUCTION_URL` | Production environment URL (variable) |
+| Secret/Variable         | Purpose                               |
+| ----------------------- | ------------------------------------- |
+| `AZURE_CLIENT_ID`       | Azure OIDC authentication             |
+| `AZURE_TENANT_ID`       | Azure tenant                          |
+| `AZURE_SUBSCRIPTION_ID` | Azure subscription                    |
+| `STAGING_URL`           | Staging environment URL (variable)    |
+| `PRODUCTION_URL`        | Production environment URL (variable) |
 
 ---
 
@@ -206,12 +207,12 @@ gitGraph
     merge hotfix/fix tag: "v1.0.1"
 ```
 
-| Branch | Purpose | Lifetime |
-|--------|---------|----------|
-| `main` | Production-ready, always deployable | Permanent |
-| `release/*` | Release stabilization | Days |
-| `feature/*` | New features | 1-3 days |
-| `hotfix/*` | Critical production fixes | Hours |
+| Branch      | Purpose                             | Lifetime  |
+| ----------- | ----------------------------------- | --------- |
+| `main`      | Production-ready, always deployable | Permanent |
+| `release/*` | Release stabilization               | Days      |
+| `feature/*` | New features                        | 1-3 days  |
+| `hotfix/*`  | Critical production fixes           | Hours     |
 
 See [docs/branching-strategy.md](docs/branching-strategy.md) for full details.
 
@@ -230,16 +231,16 @@ For non-optional governance across all repos:
 
 ### Repository-Level
 
-| Control | Mechanism |
-|---------|-----------|
-| Code review | CODEOWNERS + required approvals |
-| Code quality | CI pipeline (lint, test, build) |
-| Security | CodeQL + Dependabot + TruffleHog + dependency review |
-| IaC guardrails | Terraform validate/tflint + Bicep lint + Checkov |
-| Azure auth | OIDC federated credentials (no stored secrets) |
-| Commit format | Conventional commits (enforced via CI) |
-| Dependencies | Dependabot + vulnerability alerts |
-| Stale cleanup | Automated stale issue/PR management |
+| Control        | Mechanism                                            |
+| -------------- | ---------------------------------------------------- |
+| Code review    | CODEOWNERS + required approvals                      |
+| Code quality   | CI pipeline (lint, test, build)                      |
+| Security       | CodeQL + Dependabot + TruffleHog + dependency review |
+| IaC guardrails | Terraform validate/tflint + Bicep lint + Checkov     |
+| Azure auth     | OIDC federated credentials (no stored secrets)       |
+| Commit format  | Conventional commits (enforced via CI)               |
+| Dependencies   | Dependabot + vulnerability alerts                    |
+| Stale cleanup  | Automated stale issue/PR management                  |
 
 ---
 
@@ -267,14 +268,60 @@ Edit `.github/CODEOWNERS` to reflect your team structure. Replace `@org/team-nam
 Edit `.github/workflows/codeql.yml` and update the language matrix:
 
 ```yaml
-language: ['javascript', 'python']  # Add your languages
+language: ["javascript", "python"] # Add your languages
 ```
 
 ---
 
-## Automation Beyond This Template
+## Governance Engine
 
-For full enterprise automation, consider:
+This template includes a full **Governance Engine** for automated repository lifecycle management.
+
+### Create a New Governed Repository
+
+```bash
+# Via GitHub Actions UI: Actions → Governance: Create Repository
+# Or via CLI:
+gh workflow run governance-create.yml \
+  -f profile=azure-ai-landing-zone \
+  -f repo_name=my-new-service \
+  -f team_slug=backend-team \
+  -f project_name="My New Service"
+```
+
+### Assess Compliance
+
+```bash
+gh workflow run governance-assess.yml \
+  -f profile=azure-ai-landing-zone \
+  -f target_repo=my-org/existing-repo
+```
+
+### Remediate Drift
+
+```bash
+# Preview (safe mode)
+gh workflow run governance-remediate.yml \
+  -f profile=azure-ai-landing-zone \
+  -f mode=safe
+
+# Apply changes
+gh workflow run governance-remediate.yml \
+  -f profile=azure-ai-landing-zone \
+  -f mode=semi-auto
+```
+
+### Available Profiles
+
+| Profile                 | Description                                               |
+| ----------------------- | --------------------------------------------------------- |
+| `azure-ai-landing-zone` | Full Azure AI with OIDC, RBAC, Key Vault, 4 environments  |
+| `cloud-native-app`      | Containerized microservice, K8s-ready, lighter governance |
+| `data-platform`         | Strict compliance, signed commits, data classification    |
+
+See [governance/README.md](governance/README.md) for full documentation.
+
+### Alternative Automation
 
 ```bash
 # Terraform GitHub Provider - manage repos as code
@@ -286,29 +333,13 @@ terraform {
   }
 }
 
-# Create repo from template
 resource "github_repository" "new_service" {
-  name        = "my-new-service"
+  name     = "my-new-service"
   template {
     owner      = "my-org"
     repository = "enterprise-repo-template"
   }
 }
-```
-
-### GitHub CLI Automation
-
-```bash
-# Create repo from template
-gh repo create my-org/new-service --template my-org/enterprise-repo-template --private
-
-# Apply branch protection
-gh api repos/my-org/new-service/branches/main/protection --method PUT \
-  --field required_pull_request_reviews='{"required_approving_review_count":2}'
-
-# Add team permissions
-gh api orgs/my-org/teams/backend-team/repos/my-org/new-service --method PUT \
-  --field permission=push
 ```
 
 ---

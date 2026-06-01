@@ -50,32 +50,33 @@ flowchart LR
 ```
 
 **Workflows:**
+
 - `.github/workflows/governance-assess.yml`
 - `.github/workflows/governance-remediate.yml`
 
 ## Governance Profiles
 
-| Profile | Description | Key Features |
-|---------|-------------|--------------|
-| `azure-ai-landing-zone` | Full Azure AI project | OIDC, RBAC, Key Vault, 4 environments, signed commits |
-| `cloud-native-app` | Containerized microservice | Docker, K8s, 3 environments, lighter security |
-| `data-platform` | Data engineering | Strict compliance, signed commits, wiki, data classification |
+| Profile                 | Description                | Key Features                                                 |
+| ----------------------- | -------------------------- | ------------------------------------------------------------ |
+| `azure-ai-landing-zone` | Full Azure AI project      | OIDC, RBAC, Key Vault, 4 environments, signed commits        |
+| `cloud-native-app`      | Containerized microservice | Docker, K8s, 3 environments, lighter security                |
+| `data-platform`         | Data engineering           | Strict compliance, signed commits, wiki, data classification |
 
 ### Profile Structure
 
 Each YAML profile defines:
 
 ```yaml
-repository:        # Visibility, merge settings, topics
-rulesets:          # Branch protection rules
-required_files:    # Files that must exist
-workflows:         # Required CI/CD workflows
-environments:      # Deployment environments with gates
-security:          # CodeQL, secret scanning, Dependabot
-azure:             # OIDC, RBAC, Key Vault
-labels:            # Issue/PR labels
-teams:             # Team permissions
-project:           # Project board configuration
+repository: # Visibility, merge settings, topics
+rulesets: # Branch protection rules
+required_files: # Files that must exist
+workflows: # Required CI/CD workflows
+environments: # Deployment environments with gates
+security: # CodeQL, secret scanning, Dependabot
+azure: # OIDC, RBAC, Key Vault
+labels: # Issue/PR labels
+teams: # Team permissions
+project: # Project board configuration
 ```
 
 ## Usage
@@ -139,11 +140,11 @@ gh workflow run governance-remediate.yml \
 
 ## Remediation Modes
 
-| Mode | Behavior | Use Case |
-|------|----------|----------|
-| `safe` | Preview only — no changes applied | Review before applying |
-| `semi-auto` | Apply API changes, PR for file changes | Balanced approach |
-| `auto` | Apply everything directly | CI/automation, scheduled drift fix |
+| Mode        | Behavior                               | Use Case                           |
+| ----------- | -------------------------------------- | ---------------------------------- |
+| `safe`      | Preview only — no changes applied      | Review before applying             |
+| `semi-auto` | Apply API changes, PR for file changes | Balanced approach                  |
+| `auto`      | Apply everything directly              | CI/automation, scheduled drift fix |
 
 ## Scheduled Drift Detection
 
@@ -157,8 +158,8 @@ The assessment workflow runs weekly (Monday 06:00 UTC) to detect configuration d
 
 ### Secrets
 
-| Secret | Purpose | Required For |
-|--------|---------|--------------|
+| Secret           | Purpose                                               | Required For               |
+| ---------------- | ----------------------------------------------------- | -------------------------- |
 | `GOVERNANCE_PAT` | Personal Access Token with `repo`, `admin:org` scopes | Create/Remediate workflows |
 
 ### Tools (for local execution)
