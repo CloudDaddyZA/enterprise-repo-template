@@ -266,14 +266,14 @@ The Chat Participant provides a conversational interface directly in VS Code Cop
 
 ### Available Commands
 
-| Command | Description |
-|---------|-------------|
-| `/create` | Create a new governed repository from a profile |
-| `/assess` | Assess compliance of an existing repository |
-| `/remediate` | Fix governance gaps (safe/semi-auto/auto modes) |
-| `/profiles` | List available governance profiles |
-| `/report` | Generate a compliance report (markdown/JSON/badge) |
-| `/azure` | Set up Azure OIDC, RBAC, and Key Vault |
+| Command      | Description                                        |
+| ------------ | -------------------------------------------------- |
+| `/create`    | Create a new governed repository from a profile    |
+| `/assess`    | Assess compliance of an existing repository        |
+| `/remediate` | Fix governance gaps (safe/semi-auto/auto modes)    |
+| `/profiles`  | List available governance profiles                 |
+| `/report`    | Generate a compliance report (markdown/JSON/badge) |
+| `/azure`     | Set up Azure OIDC, RBAC, and Key Vault             |
 
 ### Example Usage
 
@@ -313,13 +313,13 @@ See [copilot-participant/README.md](copilot-participant/README.md) for full deta
 
 ## Integration & Automation Options
 
-| Method                       | Best For                                     | Trigger Types                     |
-| ---------------------------- | -------------------------------------------- | --------------------------------- |
-| GitHub Actions Workflow      | Standard CI/CD, scheduled drift detection    | Manual, schedule, webhook         |
-| MCP Server (Copilot Agent)   | Conversational governance, ad-hoc operations | User/AI prompt                    |
-| Chat Participant (@governance) | VS Code interactive governance             | User prompt in Copilot Chat       |
-| CLI Scripts                  | Local development, automation pipelines      | Manual, scripts                   |
-| GitHub App                   | Scale across many orgs (future)              | Repository created, policy change |
+| Method                         | Best For                                     | Trigger Types                     |
+| ------------------------------ | -------------------------------------------- | --------------------------------- |
+| GitHub Actions Workflow        | Standard CI/CD, scheduled drift detection    | Manual, schedule, webhook         |
+| MCP Server (Copilot Agent)     | Conversational governance, ad-hoc operations | User/AI prompt                    |
+| Chat Participant (@governance) | VS Code interactive governance               | User prompt in Copilot Chat       |
+| CLI Scripts                    | Local development, automation pipelines      | Manual, scripts                   |
+| GitHub App                     | Scale across many orgs (future)              | Repository created, policy change |
 
 ### Event Triggers
 

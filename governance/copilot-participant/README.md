@@ -14,14 +14,14 @@ Press **F5** in VS Code to launch a development host with the extension loaded.
 
 ## Commands
 
-| Command | Description | Example |
-|---------|-------------|---------|
-| `/create` | Create a new governed repository | `@governance /create azure-ai-landing-zone my-repo team-slug "Project"` |
-| `/assess` | Assess compliance | `@governance /assess cloud-native-app my-org/my-repo` |
-| `/remediate` | Fix governance gaps | `@governance /remediate data-platform my-org/my-repo safe` |
-| `/profiles` | List governance profiles | `@governance /profiles` |
-| `/report` | Generate compliance report | `@governance /report azure-ai-landing-zone my-org/my-repo` |
-| `/azure` | Azure OIDC/RBAC/KV setup | `@governance /azure azure-ai-landing-zone my-org/my-repo <sub-id>` |
+| Command      | Description                      | Example                                                                 |
+| ------------ | -------------------------------- | ----------------------------------------------------------------------- |
+| `/create`    | Create a new governed repository | `@governance /create azure-ai-landing-zone my-repo team-slug "Project"` |
+| `/assess`    | Assess compliance                | `@governance /assess cloud-native-app my-org/my-repo`                   |
+| `/remediate` | Fix governance gaps              | `@governance /remediate data-platform my-org/my-repo safe`              |
+| `/profiles`  | List governance profiles         | `@governance /profiles`                                                 |
+| `/report`    | Generate compliance report       | `@governance /report azure-ai-landing-zone my-org/my-repo`              |
+| `/azure`     | Azure OIDC/RBAC/KV setup         | `@governance /azure azure-ai-landing-zone my-org/my-repo <sub-id>`      |
 
 ## How It Works
 
@@ -67,12 +67,12 @@ npm run package
 
 ## Difference from MCP Server
 
-| Feature | Chat Participant | MCP Server |
-|---------|-----------------|------------|
-| Interface | `@governance` in Copilot Chat | Any MCP-compatible AI agent |
-| Protocol | VS Code Extension API | Model Context Protocol (stdio) |
-| Setup | Install extension | Configure in `.vscode/mcp.json` |
-| Best for | Interactive VS Code users | Automation, multi-agent workflows |
+| Feature   | Chat Participant              | MCP Server                        |
+| --------- | ----------------------------- | --------------------------------- |
+| Interface | `@governance` in Copilot Chat | Any MCP-compatible AI agent       |
+| Protocol  | VS Code Extension API         | Model Context Protocol (stdio)    |
+| Setup     | Install extension             | Configure in `.vscode/mcp.json`   |
+| Best for  | Interactive VS Code users     | Automation, multi-agent workflows |
 
 Both delegate to the same underlying engine scripts — choose based on your workflow.
 
